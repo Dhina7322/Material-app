@@ -98,23 +98,29 @@ const sendWithSendGrid = (to, subject, text, html = null) => {
 const sendEmail = async (to, subject, text, html = null, origin = null) => {
     // Render Free Tier blocks SMTP ports 465, 587, 25.
     // Dynamically construct the proxy URL based on the request's origin (Vercel deployment URL)
-    let emailProxyUrl = null;
     
     // Only use proxy in production environments
     const isProd = process.env.NODE_ENV === 'production';
     const isLocal = origin && (origin.includes('localhost') || origin.includes('192.168') || origin.includes('127.0.0.1') || origin.includes('10.0.2.2'));
     
-    if (isProd) {
-        if (origin && !isLocal) {
-            emailProxyUrl = `${origin.replace(/\/$/, '')}/api/send-email`;
-            console.log(`[MAILER] Resolved dynamic Vercel origin proxy: ${emailProxyUrl}`);
-        } else if (process.env.EMAIL_PROXY_URL) {
-            emailProxyUrl = process.env.EMAIL_PROXY_URL;
-            if (!emailProxyUrl.includes('/api/send-email')) {
-                emailProxyUrl = `${emailProxyUrl.replace(/\/$/, '')}/api/send-email`;
-            }
-            console.log(`[MAILER] Resolved configured EMAIL_PROXY_URL proxy: ${emailProxyUrl}`);
-        }
+    let proxyUrl = '';
+    // Prefer the request's origin header (works in web / Expo dev)
+    if (origin) {
+      // If the origin looks like a Vercel preview deployment, use it directly
+      // Example: https://material-8vmx45r2u-arou-s-projects.vercel.app
+      proxyUrl = `${origin}/api/send-email`;
+    } else if (process.env.EMAIL_PROXY_URL) {
+      // Fallback to configured env var – ensure it ends with the API path
+      proxyUrl = process.env.EMAIL_PROXY_URL.replace(/\/*$/,'') + '/api/send-email';
+    }
+    // If still empty, default to the production Vercel URL (hard‑coded)
+    if (!proxyUrl) {
+      const defaultVercel = process.env.DEFAULT_VERCEL_URL || 'https://material-request-app.vercel.app';
+      proxyUrl = `${defaultVercel.replace(/\/*$/,'')}/api/send-email`;
+    }
+    // If still empty after all attempts, abort with clear error
+    if (!proxyUrl) {
+      throw new Error('Unable to determine email proxy URL – set EMAIL_PROXY_URL or DEFAULT_VERCEL_URL environment variable');
     }
     
     // If SendGrid API key is present, prefer sending directly via SendGrid (works in serverless)
@@ -130,10 +136,10 @@ const sendEmail = async (to, subject, text, html = null, origin = null) => {
         }
     }
     
-    if (emailProxyUrl) {
-        console.log(`[MAILER] Routing email request via proxy to: ${emailProxyUrl}`);
+    if (proxyUrl) {
+        console.log(`[MAILER] Routing email request via proxy to: ${proxyUrl}`);
         try {
-            const result = await httpsPost(emailProxyUrl, {
+            const result = await httpsPost(proxyUrl, {
                 to,
                 subject,
                 text,
