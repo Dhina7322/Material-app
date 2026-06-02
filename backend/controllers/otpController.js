@@ -18,54 +18,36 @@ exports.sendOtp = async (req, res) => {
         await Otp.deleteMany({ email });
         await newOtp.save();
 
-        // Send email and AWAIT it so failures are reported back to the client
+        // Send email in background (fire-and-forget) so registration isn't blocked
+        // by mailer timeouts or proxy issues. We still log errors for diagnostics.
         const sendStart = Date.now();
-        try {
-            await sendEmail(
-                email,
-                'Your Verification Code',
-                `Your OTP for verification is: ${otp}. This code will expire in 5 minutes.`,
-                req.headers.origin
-            );
+        sendEmail(
+            email,
+            'Your Verification Code',
+            `Your OTP for verification is: ${otp}. This code will expire in 5 minutes.`,
+            req.headers.origin
+        ).then(() => {
             const sendDuration = Date.now() - sendStart;
             console.log(`[OTP] Email sent to ${email} in ${sendDuration}ms`);
-
-            // Return duration for short-term debugging; do not expose OTP in production
-            const responsePayload = { msg: 'Verification code sent to ' + email, debugDurationMs: sendDuration };
-            if (process.env.NODE_ENV !== 'production') responsePayload.devOtp = otp;
-            return res.json(responsePayload);
-        } catch (mailErr) {
+        }).catch(async (mailErr) => {
             const sendDuration = Date.now() - sendStart;
-            console.error('[OTP] Email delivery failed:', mailErr && (mailErr.message || mailErr.toString()));
+            console.error('[OTP] Async email delivery failed:', mailErr && (mailErr.message || String(mailErr)));
             console.error('[OTP] Mail error details:', {
                 name: mailErr.name,
                 message: mailErr.message,
                 code: mailErr.code,
                 responseCode: mailErr.responseCode,
-                stack: mailErr.stack
+                stack: mailErr.stack,
+                response: mailErr.response || null
             });
-            console.error(`[OTP] Email attempt took ${sendDuration}ms before failing`);
-            // Clean up the saved OTP so the user can try again cleanly
-            await Otp.deleteMany({ email });
-            const payload = {
-                msg: 'Could not send verification email. Please check your email address and try again.',
-                debugDurationMs: sendDuration,
-                debug: mailErr.message || String(mailErr)
-            };
-            // If the mailer attached a response object (proxy details), include key fields for diagnosis
-            if (mailErr.response) {
-                payload.proxy = {
-                    statusCode: mailErr.response.statusCode,
-                    headers: mailErr.response.headers,
-                    body: mailErr.response.body
-                };
-            }
-            // Include stack in non-production to help diagnose deployed errors
-            if (process.env.NODE_ENV !== 'production') {
-                payload.debugStack = mailErr.stack;
-            }
-            return res.status(500).json(payload);
-        }
+            // Do NOT delete the OTP on async failure; keep it so the user can still verify if email actually arrives later.
+            // Consider adding an alert or retry mechanism here.
+        });
+
+        // Return success immediately (don't expose OTP in production)
+        const responsePayload = { msg: 'Verification code sent to ' + email, debugDurationMs: Date.now() - sendStart };
+        if (process.env.NODE_ENV !== 'production') responsePayload.devOtp = otp;
+        return res.json(responsePayload);
     } catch (err) {
         console.error('OTP Send Error:', err.message);
         res.status(500).json({ msg: 'Error processing verification' });
