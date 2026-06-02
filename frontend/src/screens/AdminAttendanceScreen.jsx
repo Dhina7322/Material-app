@@ -589,28 +589,28 @@ const AdminAttendanceScreen = ({ navigation }) => {
                                         {(record.status === 'Pending' || isWaiting) ? (
                                             <View style={styles.actionGroup}>
                                                 <TouchableOpacity
-                                                    style={[styles.footerActionBtn, { backgroundColor: '#fee2e2', borderWidth: 1, borderColor: '#fca5a5' }]}
+                                                    style={[styles.footerActionBtn, styles.footerRejectBtn]}
                                                     onPress={() => handleAction(record._id, 'Rejected')}
                                                 >
                                                     <AdminSvgIcon name="close-circle" size={14} color="#ef4444" />
-                                                    <Text style={{ color: '#ef4444', fontWeight: 'bold', fontSize: 13, marginLeft: 4 }}>REJECT</Text>
+                                                    <Text style={[styles.footerActionText, styles.footerActionTextReject]}>REJECT</Text>
                                                 </TouchableOpacity>
 
                                                 {isWaiting && (
                                                     <TouchableOpacity
-                                                        style={[styles.footerActionBtn, { backgroundColor: '#fef3c7', borderWidth: 1, borderColor: '#fcd34d' }]}
-                                                        onPress={() => handleAction(record._id, 'Pending')}
+                                                        style={[styles.footerActionBtn, styles.footerHoldBtn]}
+                                                        onPress={() => handleAction(record._id, 'Waiting')}
                                                     >
-                                                        <Text style={{ color: '#d97706', fontWeight: 'bold', fontSize: 13 }}>HOLD</Text>
+                                                        <Text style={[styles.footerActionText, styles.footerActionTextHold]}>HOLD</Text>
                                                     </TouchableOpacity>
                                                 )}
 
                                                 <TouchableOpacity
-                                                    style={[styles.footerActionBtn, { backgroundColor: '#1b264a', flex: 2 }]}
+                                                    style={[styles.footerActionBtn, styles.footerApproveBtn]}
                                                     onPress={() => handleAction(record._id, 'Approved')}
                                                 >
                                                     <AdminSvgIcon name="checkmark-circle" size={14} color="#ffc61c" />
-                                                    <Text style={{ color: '#ffc61c', fontWeight: 'bold', fontSize: 13, marginLeft: 4 }}>APPROVE</Text>
+                                                    <Text style={[styles.footerActionText, styles.footerActionTextApprove]}>APPROVE</Text>
                                                 </TouchableOpacity>
                                             </View>
                                         ) : (
@@ -718,11 +718,11 @@ const styles = StyleSheet.create({
     userInfoRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 15 },
     avatarPlaceholder: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#1b264a10', justifyContent: 'center', alignItems: 'center' },
     avatarInitials: { fontSize: 16, fontWeight: 'bold', color: '#1b264a' },
-    recordName: { fontSize: 16, fontWeight: 'bold', color: '#0f172a' },
-    recordEmployeeId: { fontSize: 12, color: '#64748b' },
+    recordName: { fontSize: 18, fontWeight: '700', color: '#0f172a' },
+    recordEmployeeId: { fontSize: 13, color: '#475569' },
     timeInfo: { alignItems: 'flex-end' },
     timeLabel: { fontSize: 8, fontWeight: 'bold', color: '#94a3b8' },
-    timeValue: { fontSize: 14, fontWeight: 'bold', color: '#0f172a' },
+    timeValue: { fontSize: 15, fontWeight: '700', color: '#0f172a' },
 
     reasonBlock: { backgroundColor: '#f8fafc', padding: 10, borderRadius: 8, marginBottom: 15, borderWidth: 1, borderColor: '#f1f5f9' },
     reasonLabel: { fontSize: 10, fontWeight: 'bold', color: '#1b264a', marginBottom: 2 },
@@ -746,7 +746,7 @@ const styles = StyleSheet.create({
     },
     photoThumbnailWrap: {
         width: '100%',
-        height: 160,
+        height: 110,
         borderRadius: 10,
         overflow: 'hidden',
         backgroundColor: '#e2e8f0',
@@ -783,7 +783,7 @@ const styles = StyleSheet.create({
     },
     noPhotoText: { fontSize: 13, fontWeight: '600', color: '#94a3b8' },
     noPhotoSub: { fontSize: 10, color: '#cbd5e1' },
-    mapEmbedWrap: { borderRadius: 10, overflow: 'hidden' },
+    mapEmbedWrap: { borderRadius: 10, overflow: 'hidden', height: 120 },
     mapOpenBtn: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -813,6 +813,13 @@ const styles = StyleSheet.create({
     recordFooter: { padding: 12, borderTopWidth: 1, borderTopColor: '#f1f5f9', backgroundColor: '#fafafa' },
     actionGroup: { flexDirection: 'row', gap: 10 },
     footerActionBtn: { paddingVertical: 12, borderRadius: 10, alignItems: 'center', justifyContent: 'center', flex: 1, flexDirection: 'row' },
+    footerApproveBtn: { backgroundColor: '#1b264a' },
+    footerRejectBtn: { backgroundColor: '#fee2e2', borderWidth: 1, borderColor: '#fca5a5' },
+    footerHoldBtn: { backgroundColor: '#fef3c7', borderWidth: 1, borderColor: '#fcd34d' },
+    footerActionText: { fontSize: 13, fontWeight: 'bold', marginLeft: 8 },
+    footerActionTextApprove: { color: '#ffc61c' },
+    footerActionTextReject: { color: '#ef4444' },
+    footerActionTextHold: { color: '#d97706' },
     
     statusFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     finalStatusBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },

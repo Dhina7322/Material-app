@@ -87,7 +87,11 @@ exports.markAttendanceV2 = async (req, res) => {
         const io = req.app.get('io');
         if (io) {
             io.emit('attendanceUpdate');
+            // Notify employee's own screen
             io.emit('attendanceUpdated', { userId: req.user.id, attendance: newRecord });
+            // Notify admin panel — populate user name for toast
+            const populated = await newRecord.populate('user', ['name', 'employeeId', 'email']);
+            io.emit('attendanceNew', { attendance: populated });
         }
 
         res.json(newRecord);
@@ -166,7 +170,8 @@ exports.actionAttendance = async (req, res) => {
             return res.status(403).json({ msg: 'Access denied' });
         }
         const { status } = req.body;
-        if (!['Approved', 'Rejected'].includes(status)) {
+        // 'Pending' / 'Waiting' = admin puts it on hold (moves to pending tab)
+        if (!['Approved', 'Rejected', 'Pending', 'Waiting'].includes(status)) {
             return res.status(400).json({ msg: 'Invalid status' });
         }
 
@@ -183,6 +188,34 @@ exports.actionAttendance = async (req, res) => {
         }
 
         await attendance.save();
+
+        // Send email notification to the employee on final decision
+        if (status === 'Approved' || status === 'Rejected') {
+            try {
+                const employee = await User.findById(attendance.user);
+                if (employee && employee.email) {
+                    const subject = `Your Attendance Request has been ${status}`;
+                    const html = `
+                        <div style="font-family: Arial, sans-serif; max-width: 520px; margin: auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+                            <div style="background: #1b264a; padding: 24px; text-align: center;">
+                                <h2 style="color: #ffc61c; margin: 0;">Attendance Update</h2>
+                            </div>
+                            <div style="padding: 24px; background: #f8fafc;">
+                                <p style="font-size: 16px; color: #0f172a;">Hello <strong>${employee.name}</strong>,</p>
+                                <p style="font-size: 15px; color: #475569;">Your attendance request for <strong>${attendance.date}</strong> has been <strong style="color: ${status === 'Approved' ? '#10b981' : '#ef4444'}">${status}</strong> by the admin.</p>
+                                ${status === 'Approved' ? '<p style="color:#10b981; font-weight:bold;">✅ Your attendance is now marked. You may proceed with your work.</p>' : '<p style="color:#ef4444;">❌ If you believe this is incorrect, please contact your admin.</p>'}
+                                <hr style="border:none; border-top:1px solid #e2e8f0; margin:20px 0;">
+                                <p style="font-size: 12px; color: #94a3b8;">This is an automated notification from the Attendance Management System.</p>
+                            </div>
+                        </div>
+                    `;
+                    const plainText = `Your attendance for ${attendance.date} has been ${status} by the admin.`;
+                    await sendEmail(employee.email, subject, plainText, html);
+                }
+            } catch (emailErr) {
+                console.error('Failed to send attendance action email:', emailErr);
+            }
+        }
 
         const io = req.app.get('io');
         if (io) {

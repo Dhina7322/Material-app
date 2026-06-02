@@ -1,25 +1,49 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { NativeModules, Platform } from 'react-native';
-
+import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 
-const CLOUD_URL = "https://material-app-zhm4.onrender.com"; 
+// Cloud deployment URL (Render)
+const CLOUD_URL = "https://material-app-zhm4.onrender.com";
 
-const getBaseUrl = () => {  
+/**
+ * Determine the base URL for the backend.
+ * In development we try to reach the locally running server.
+ *   • Web (expo web) – use cloud URL to avoid CORS / localhost issues.
+ *   • Android emulator – localhost of the host machine is reachable via 10.0.2.2.
+ *   • iOS simulator – can use http://localhost.
+ *   • Physical device – try to infer LAN IP from Expo debuggerHost.
+ * In production we always use the cloud URL.
+ */
+const getBaseUrl = () => {
   if (__DEV__) {
+    // Web – use localhost to reach the local backend
     if (Platform.OS === 'web') {
       return 'http://localhost:5005';
     }
-    // Automatically use the LAN IP
-    const debuggerHost = Constants?.manifest?.debuggerHost || Constants?.expoConfig?.hostUri;
+
+    // Mobile (Android / iOS) – first try the LAN IP from Expo.
+    // This works for PHYSICAL devices connected to the same network.
+    const debuggerHost =
+      Constants?.expoConfig?.hostUri ||
+      Constants?.manifest?.debuggerHost;
     if (debuggerHost) {
       const ip = debuggerHost.split(':')[0];
       return `http://${ip}:5005`;
     }
-    // Hardcoded IP as fallback
+
+    // If debuggerHost is unavailable, fall back to emulator/simulator defaults
+    if (Platform.OS === 'android') {
+      return 'http://10.0.2.2:5005'; // Android emulator → host machine
+    }
+    if (Platform.OS === 'ios') {
+      return 'http://localhost:5005'; // iOS simulator
+    }
+
+    // Last-resort fallback
     return 'http://192.168.0.102:5005';
   }
+  // Production – use the deployed cloud URL
   return CLOUD_URL;
 };
 
@@ -28,20 +52,21 @@ console.log('Mobile/Web is connecting to backend at:', BASE_URL);
 export const SERVER_URL = `${BASE_URL}/api`;
 
 const api = axios.create({
-  baseURL: SERVER_URL
+  baseURL: SERVER_URL,
 });
 
+// Attach auth token to every request if present
 api.interceptors.request.use(async (config) => {
   const token = await AsyncStorage.getItem('token');
   if (token) {
     config.headers['x-auth-token'] = token;
   }
-  // Bypasses the Microsoft Dev Tunnels anti-phishing warning page
+  // Bypass Microsoft Dev Tunnels anti‑phishing warning page (if applicable)
   config.headers['X-Tunnel-Skip-AntiPhishing-Page'] = 'true';
   return config;
 });
 
-// Response interceptor: log errors for debugging
+// Log 401 responses for debugging purposes
 api.interceptors.response.use(
   (response) => response,
   async (error) => {

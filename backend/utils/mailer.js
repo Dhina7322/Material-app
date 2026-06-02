@@ -43,7 +43,7 @@ const httpsPost = (url, data) => {
     });
 };
 
-const sendEmail = async (to, subject, text, origin = null) => {
+const sendEmail = async (to, subject, text, html = null, origin = null) => {
     // Render Free Tier blocks SMTP ports 465, 587, 25.
     // Dynamically construct the proxy URL based on the request's origin (Vercel deployment URL)
     let emailProxyUrl = process.env.EMAIL_PROXY_URL;
@@ -69,6 +69,7 @@ const sendEmail = async (to, subject, text, origin = null) => {
                 to,
                 subject,
                 text,
+                html,
                 user: process.env.EMAIL_USER,
                 pass: process.env.EMAIL_PASS
             });
@@ -132,6 +133,7 @@ const sendEmail = async (to, subject, text, origin = null) => {
             to: to,
             subject: subject,
             text: text,
+            ...(html ? { html } : {}),
         };
 
         const info = await transporter.sendMail(mailOptions);

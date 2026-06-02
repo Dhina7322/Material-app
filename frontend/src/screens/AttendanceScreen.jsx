@@ -41,7 +41,6 @@ const AttendanceScreen = ({ navigation }) => {
     // Hidden file input ref for web — bypasses Expo camera polyfill issues
     const webFileInputRef = useRef(null);
     const webFileResolverRef = useRef(null); // Stores the resolve/reject for the pending photo promise
-
     const { width } = useWindowDimensions();
     const isMobile = width < 768;
     const sidebarWidth = Platform.OS === 'web' ? Math.min(280, width * 0.85) : 280;
@@ -371,6 +370,20 @@ const AttendanceScreen = ({ navigation }) => {
         return isNaN(d.getTime()) ? 'N/A' : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     };
 
+    const getFullImageUrl = (path) => {
+        if (!path) return null;
+        let cleanPath = path.toString().trim().replace(/\\/g, '/');
+        const uploadsIndex = cleanPath.indexOf('uploads/');
+        if (uploadsIndex !== -1) {
+            cleanPath = cleanPath.substring(uploadsIndex);
+        } else {
+            const filename = cleanPath.split('/').pop();
+            cleanPath = `uploads/${filename}`;
+        }
+        const encodedPath = cleanPath.split('/').map(segment => encodeURIComponent(segment)).join('/');
+        return `${BASE_URL}/${encodedPath}`;
+    };
+
     const getCheckoutLabel = (record) => {
         if (record.checkOutStatus === 'ClosedApproved') return { label: 'Day Closed ✓', color: '#10b981', canCheckout: false };
         if (record.checkOutStatus === 'PendingClose') return { label: 'Awaiting Close Approval', color: '#f59e0b', canCheckout: false };
@@ -638,34 +651,59 @@ const AttendanceScreen = ({ navigation }) => {
                                         {record.checkOutTime && (
                                             <Text style={styles.checkoutTime}>Check-out: {formatTime(record.checkOutTime)}</Text>
                                         )}
-                                        {hasLocation && (
-                                            <TouchableOpacity
-                                                onPress={() => mapsUrl && Linking.openURL(mapsUrl)}
-                                                style={styles.locationBadge}
-                                            >
-                                                <Ionicons name="location" size={11} color="#3b82f6" />
-                                                <Text style={styles.locationBadgeText}>
-                                                    Check-In Location Map
-                                                </Text>
-                                            </TouchableOpacity>
+                                        {record.type !== 'Leave' && hasLocation && (
+                                            Platform.OS === 'web' ? (
+                                                <View style={styles.mapEmbedSmallWrap}>
+                                                    <iframe
+                                                        title={`map-${record._id}`}
+                                                        width="100%"
+                                                        height="140"
+                                                        frameBorder="0"
+                                                        scrolling="no"
+                                                        style={{ border: 0, borderRadius: 10, display: 'block' }}
+                                                        src={`https://www.openstreetmap.org/export/embed.html?bbox=${record.locationLng - 0.005},${record.locationLat - 0.005},${record.locationLng + 0.005},${record.locationLat + 0.005}&layer=mapnik&marker=${record.locationLat},${record.locationLng}`}
+                                                    />
+                                                    <TouchableOpacity onPress={() => mapsUrl && Linking.openURL(mapsUrl)} style={styles.mapOpenBtnSmall}>
+                                                        <Ionicons name="location" size={12} color="#3b82f6" />
+                                                        <Text style={styles.mapOpenBtnTextSmall}>View on Map</Text>
+                                                    </TouchableOpacity>
+                                                </View>
+                                            ) : (
+                                                <TouchableOpacity
+                                                    onPress={() => mapsUrl && Linking.openURL(mapsUrl)}
+                                                    style={styles.locationBadge}
+                                                >
+                                                    <Ionicons name="location" size={11} color="#3b82f6" />
+                                                    <Text style={styles.locationBadgeText}>
+                                                        Check-In Location Map
+                                                    </Text>
+                                                </TouchableOpacity>
+                                            )
                                         )}
-                                        {record.checkOutLat && record.checkOutLng && (
+                                        {record.type !== 'Leave' && record.checkOutLat && record.checkOutLng && (
                                             <TouchableOpacity
                                                 onPress={() => Linking.openURL(`https://www.google.com/maps?q=${record.checkOutLat},${record.checkOutLng}`)}
                                                 style={[styles.locationBadge, { backgroundColor: '#fdf2f8' }]}
                                             >
                                                 <Ionicons name="log-out" size={11} color="#db2777" />
-                                                <Text style={[styles.locationBadgeText, { color: '#db2777' }]}>
-                                                    Check-Out Location Map
-                                                </Text>
+                                                <Text style={[styles.locationBadgeText, { color: '#db2777' }]}>Check-Out Location Map</Text>
                                             </TouchableOpacity>
                                         )}
-                                        {record.photoUrl && (
-                                            <View style={styles.photoBadge}>
-                                                <Ionicons name="camera" size={11} color="#10b981" />
-                                                <Text style={styles.photoBadgeText}>Photo Evidence ✓</Text>
-                                            </View>
-                                        )}
+                                        {record.photoUrl ? (
+                                            <TouchableOpacity
+                                                onPress={() => {
+                                                    const url = getFullImageUrl(record.photoUrl) || record.photoUrl;
+                                                    if (url) Linking.openURL(url);
+                                                }}
+                                                style={styles.smallPhotoWrap}
+                                            >
+                                                <Image source={{ uri: getFullImageUrl(record.photoUrl) || record.photoUrl }} style={styles.smallPhoto} resizeMode="cover" />
+                                                <View style={styles.smallPhotoOverlay}>
+                                                    <Ionicons name="eye" size={12} color="#fff" />
+                                                    <Text style={styles.smallPhotoOverlayText}>Click to expand</Text>
+                                                </View>
+                                            </TouchableOpacity>
+                                        ) : null}
                                         {record.status === 'Waiting' && (
                                             <View style={styles.waitingBadge}>
                                                 <Ionicons name="time" size={11} color="#f59e0b" />
@@ -800,12 +838,12 @@ const styles = StyleSheet.create({
     policyBold: { fontWeight: '700', color: '#1e293b' },
     sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#1e293b', marginBottom: 16 },
     emptyText: { color: '#64748b', fontStyle: 'italic', textAlign: 'center', marginTop: 20 },
-    recordItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#ffffff', padding: 16, borderRadius: 12, marginBottom: 12, borderWidth: 1, borderColor: '#e2e8f0', gap: 12 },
-    typeIcon: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
+    recordItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#ffffff', padding: 18, borderRadius: 12, marginBottom: 12, borderWidth: 1, borderColor: '#e2e8f0', gap: 12 },
+    typeIcon: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
     presentIcon: { backgroundColor: '#10b981' },
     leaveIcon: { backgroundColor: '#f59e0b' },
-    recordDate: { fontSize: 15, fontWeight: 'bold', color: '#0f172a' },
-    recordType: { fontSize: 12, color: '#64748b', marginTop: 2 },
+    recordDate: { fontSize: 16, fontWeight: '700', color: '#0f172a' },
+    recordType: { fontSize: 13, color: '#475569', marginTop: 4 },
     checkoutTime: { fontSize: 11, color: '#10b981', marginTop: 2, fontWeight: '600' },
     statusBadge: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
     badgeApproved: { backgroundColor: '#dcfce7' },
@@ -815,8 +853,15 @@ const styles = StyleSheet.create({
     statusText: { fontSize: 11, fontWeight: 'bold', color: '#1e293b' },
     locationBadge: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 4, backgroundColor: '#eff6ff', paddingHorizontal: 6, paddingVertical: 3, borderRadius: 6 },
     locationBadgeText: { fontSize: 10, color: '#3b82f6', fontWeight: '600' },
+    mapEmbedSmallWrap: { marginTop: 8, borderRadius: 10, overflow: 'hidden' },
+    mapOpenBtnSmall: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#eff6ff', padding: 8, borderRadius: 8, borderWidth: 1, borderColor: '#dbeafe', marginTop: 8 },
+    mapOpenBtnTextSmall: { fontSize: 11, fontWeight: '700', color: '#1e40af', flex: 1 },
     photoBadge: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 3, backgroundColor: '#f0fdf4', paddingHorizontal: 6, paddingVertical: 3, borderRadius: 6 },
     photoBadgeText: { fontSize: 10, color: '#10b981', fontWeight: '600' },
+    smallPhotoWrap: { width: '100%', height: 110, borderRadius: 10, overflow: 'hidden', marginTop: 8, backgroundColor: '#e2e8f0' },
+    smallPhoto: { width: '100%', height: '100%' },
+    smallPhotoOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.45)', paddingVertical: 6, paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
+    smallPhotoOverlayText: { color: '#fff', fontSize: 11, fontWeight: '600' },
     waitingBadge: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 3, backgroundColor: '#fffbeb', paddingHorizontal: 6, paddingVertical: 3, borderRadius: 6 },
     waitingBadgeText: { fontSize: 10, color: '#f59e0b', fontWeight: '600' },
     // Tab Switcher
