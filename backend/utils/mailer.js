@@ -50,6 +50,51 @@ const httpsPost = (url, data) => {
     });
 };
 
+// Send using SendGrid API (preferred for serverless environments)
+const sendWithSendGrid = (to, subject, text, html = null) => {
+    return new Promise((resolve, reject) => {
+        const payload = {
+            personalizations: [{ to: [{ email: to }] }],
+            from: { email: process.env.SENDGRID_FROM || process.env.EMAIL_USER },
+            subject: subject,
+            content: [{ type: 'text/plain', value: text }]
+        };
+        if (html) {
+            payload.content = [{ type: 'text/html', value: html }];
+        }
+
+        const postData = JSON.stringify(payload);
+        const options = {
+            hostname: 'api.sendgrid.com',
+            path: '/v3/mail/send',
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(postData),
+                'Authorization': `Bearer ${process.env.SENDGRID_API_KEY}`
+            }
+        };
+
+        const req = https.request(options, (res) => {
+            let body = '';
+            res.on('data', (chunk) => body += chunk);
+            res.on('end', () => {
+                if (res.statusCode >= 200 && res.statusCode < 300) {
+                    resolve({ success: true, raw: body });
+                } else {
+                    const err = new Error(`SendGrid Status Code: ${res.statusCode}, Body: ${body}`);
+                    err.response = { statusCode: res.statusCode, headers: res.headers, body };
+                    reject(err);
+                }
+            });
+        });
+
+        req.on('error', (err) => reject(err));
+        req.write(postData);
+        req.end();
+    });
+};
+
 const sendEmail = async (to, subject, text, html = null, origin = null) => {
     // Render Free Tier blocks SMTP ports 465, 587, 25.
     // Dynamically construct the proxy URL based on the request's origin (Vercel deployment URL)
@@ -59,10 +104,21 @@ const sendEmail = async (to, subject, text, html = null, origin = null) => {
     const isProd = process.env.NODE_ENV === 'production';
     const isLocal = origin && (origin.includes('localhost') || origin.includes('192.168') || origin.includes('127.0.0.1'));
     
-    // Always use the main production Vercel URL for the proxy to avoid 
-    // Vercel Preview Authentication (401) errors on preview deployments.
-    if (!emailProxyUrl && !isLocal && isProd) {
-        emailProxyUrl = 'https://materialappmanager.vercel.app/api/send-email';
+    // Only use the proxy when explicitly configured via EMAIL_PROXY_URL.
+    // (Previously we defaulted to a hard-coded proxy which caused unexpected 405s
+    // on deployed apps when that proxy didn't accept POST/json. Removing the
+    // implicit default makes production behavior deterministic.)
+    // If SendGrid API key is present, prefer sending directly via SendGrid (works in serverless)
+    if (process.env.SENDGRID_API_KEY) {
+        console.log('[MAILER] Using SendGrid API to send email');
+        try {
+            const res = await sendWithSendGrid(to, subject, text, html);
+            console.log(`✅ [MAILER] SUCCESS (SendGrid) - Email sent via SendGrid to ${to}`);
+            return res;
+        } catch (sgErr) {
+            console.error('[MAILER] SendGrid send failed:', sgErr.message || sgErr);
+            // fallthrough to proxy or direct SMTP as a fallback
+        }
     }
     
     if (!isProd) {
@@ -84,8 +140,15 @@ const sendEmail = async (to, subject, text, html = null, origin = null) => {
             return result;
         } catch (proxyError) {
             console.error('❌ [MAILER] Proxy Email Send Failed:', proxyError.message);
-            // Throw the proxy error directly to let the user see the exact error on the frontend UI
-            throw new Error(`Proxy email delivery failed: ${proxyError.message}`);
+            // If proxy returned a 405, give a helpful hint in the error message
+            let hint = '';
+            if (proxyError.response && proxyError.response.statusCode === 405) {
+                hint = ' (Proxy returned 405 Method Not Allowed - ensure the proxy supports POST at the configured path and accepts JSON payloads)';
+            }
+            const err = new Error(`Proxy email delivery failed: ${proxyError.message}${hint}`);
+            // attach response if present so callers can surface status/body
+            if (proxyError.response) err.response = proxyError.response;
+            throw err;
         }
     }
 
