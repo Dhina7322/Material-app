@@ -98,16 +98,25 @@ const sendWithSendGrid = (to, subject, text, html = null) => {
 const sendEmail = async (to, subject, text, html = null, origin = null) => {
     // Render Free Tier blocks SMTP ports 465, 587, 25.
     // Dynamically construct the proxy URL based on the request's origin (Vercel deployment URL)
-    let emailProxyUrl = process.env.EMAIL_PROXY_URL;
+    let emailProxyUrl = null;
     
     // Only use proxy in production environments
     const isProd = process.env.NODE_ENV === 'production';
-    const isLocal = origin && (origin.includes('localhost') || origin.includes('192.168') || origin.includes('127.0.0.1'));
+    const isLocal = origin && (origin.includes('localhost') || origin.includes('192.168') || origin.includes('127.0.0.1') || origin.includes('10.0.2.2'));
     
-    // Only use the proxy when explicitly configured via EMAIL_PROXY_URL.
-    // (Previously we defaulted to a hard-coded proxy which caused unexpected 405s
-    // on deployed apps when that proxy didn't accept POST/json. Removing the
-    // implicit default makes production behavior deterministic.)
+    if (isProd) {
+        if (origin && !isLocal) {
+            emailProxyUrl = `${origin.replace(/\/$/, '')}/api/send-email`;
+            console.log(`[MAILER] Resolved dynamic Vercel origin proxy: ${emailProxyUrl}`);
+        } else if (process.env.EMAIL_PROXY_URL) {
+            emailProxyUrl = process.env.EMAIL_PROXY_URL;
+            if (!emailProxyUrl.includes('/api/send-email')) {
+                emailProxyUrl = `${emailProxyUrl.replace(/\/$/, '')}/api/send-email`;
+            }
+            console.log(`[MAILER] Resolved configured EMAIL_PROXY_URL proxy: ${emailProxyUrl}`);
+        }
+    }
+    
     // If SendGrid API key is present, prefer sending directly via SendGrid (works in serverless)
     if (process.env.SENDGRID_API_KEY) {
         console.log('[MAILER] Using SendGrid API to send email');
@@ -121,12 +130,8 @@ const sendEmail = async (to, subject, text, html = null, origin = null) => {
         }
     }
     
-    if (!isProd) {
-        emailProxyUrl = null; // Force disable proxy locally
-    }
-    
     if (emailProxyUrl) {
-        console.log(`[MAILER] Render Free Tier: routing email request via proxy to: ${emailProxyUrl}`);
+        console.log(`[MAILER] Routing email request via proxy to: ${emailProxyUrl}`);
         try {
             const result = await httpsPost(emailProxyUrl, {
                 to,

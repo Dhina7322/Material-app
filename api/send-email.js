@@ -19,7 +19,7 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { to, subject, text, user, pass } = req.body;
+  const { to, subject, text, html, user, pass } = req.body;
 
   if (!to || !subject || !text || !user || !pass) {
     return res.status(400).json({ error: 'Missing required fields' });
@@ -38,7 +38,8 @@ module.exports = async (req, res) => {
       from: `"Material App" <${user}>`,
       to,
       subject,
-      text
+      text,
+      ...(html ? { html } : {})
     };
 
     const info = await transporter.sendMail(mailOptions);

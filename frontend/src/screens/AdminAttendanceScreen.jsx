@@ -601,6 +601,7 @@ const AdminAttendanceScreen = ({ navigation }) => {
                                                         style={[styles.footerActionBtn, styles.footerHoldBtn]}
                                                         onPress={() => handleAction(record._id, 'Waiting')}
                                                     >
+                                                        <AdminSvgIcon name="time" size={14} color="#f59e0b" />
                                                         <Text style={[styles.footerActionText, styles.footerActionTextHold]}>HOLD</Text>
                                                     </TouchableOpacity>
                                                 )}
@@ -706,7 +707,7 @@ const styles = StyleSheet.create({
 
     // Card Records
     recordItem: { backgroundColor: '#fff', borderRadius: 16, marginBottom: 16, borderWidth: 1, borderColor: '#f1f5f9', overflow: 'hidden', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 10 },
-    recordItemWaiting: { borderColor: '#f59e0b', backgroundColor: '#fffbeb' },
+    recordItemWaiting: { borderColor: '#f59e0b', borderLeftWidth: 4, backgroundColor: '#fffbeb' },
     recordHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f8fafc', paddingHorizontal: 15, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
     typeBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
     badgePresent: { backgroundColor: '#10b981' },
@@ -812,14 +813,14 @@ const styles = StyleSheet.create({
 
     recordFooter: { padding: 12, borderTopWidth: 1, borderTopColor: '#f1f5f9', backgroundColor: '#fafafa' },
     actionGroup: { flexDirection: 'row', gap: 10 },
-    footerActionBtn: { paddingVertical: 12, borderRadius: 10, alignItems: 'center', justifyContent: 'center', flex: 1, flexDirection: 'row' },
-    footerApproveBtn: { backgroundColor: '#1b264a' },
-    footerRejectBtn: { backgroundColor: '#fee2e2', borderWidth: 1, borderColor: '#fca5a5' },
-    footerHoldBtn: { backgroundColor: '#fef3c7', borderWidth: 1, borderColor: '#fcd34d' },
-    footerActionText: { fontSize: 13, fontWeight: 'bold', marginLeft: 8 },
+    footerActionBtn: { paddingVertical: 10, borderRadius: 8, alignItems: 'center', justifyContent: 'center', flex: 1, flexDirection: 'row', borderWidth: 1 },
+    footerApproveBtn: { backgroundColor: '#1b264a', borderColor: '#1b264a' },
+    footerRejectBtn: { backgroundColor: '#ffffff', borderColor: '#ef4444' },
+    footerHoldBtn: { backgroundColor: '#ffffff', borderColor: '#f59e0b' },
+    footerActionText: { fontSize: 12, fontWeight: 'bold', marginLeft: 6 },
     footerActionTextApprove: { color: '#ffc61c' },
     footerActionTextReject: { color: '#ef4444' },
-    footerActionTextHold: { color: '#d97706' },
+    footerActionTextHold: { color: '#f59e0b' },
     
     statusFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     finalStatusBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },

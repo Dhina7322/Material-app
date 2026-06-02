@@ -713,7 +713,14 @@ const AttendanceScreen = ({ navigation }) => {
                                     </View>
                                     <View style={{ alignItems: 'flex-end', gap: 4 }}>
                                         <View style={[styles.statusBadge, record.status === 'Approved' ? styles.badgeApproved : record.status === 'Rejected' ? styles.badgeRejected : record.status === 'Waiting' ? styles.badgeWaiting : styles.badgePending]}>
-                                            <Text style={styles.statusText}>{record.status}</Text>
+                                            <Text style={
+                                                record.status === 'Approved' ? styles.statusTextApproved :
+                                                record.status === 'Rejected' ? styles.statusTextRejected :
+                                                record.status === 'Waiting' ? styles.statusTextWaiting :
+                                                styles.statusTextPending
+                                            }>
+                                                {record.status}
+                                            </Text>
                                         </View>
                                         {co && !co.canCheckout && record.date !== todayString && (
                                             <View style={[styles.statusBadge, { backgroundColor: co.color + '20' }]}>
@@ -850,7 +857,10 @@ const styles = StyleSheet.create({
     badgeRejected: { backgroundColor: '#fee2e2' },
     badgePending: { backgroundColor: '#fef3c7' },
     badgeWaiting: { backgroundColor: '#fef3c7' },
-    statusText: { fontSize: 11, fontWeight: 'bold', color: '#1e293b' },
+    statusTextApproved: { fontSize: 11, fontWeight: 'bold', color: '#15803d' },
+    statusTextRejected: { fontSize: 11, fontWeight: 'bold', color: '#b91c1c' },
+    statusTextWaiting: { fontSize: 11, fontWeight: 'bold', color: '#b45309' },
+    statusTextPending: { fontSize: 11, fontWeight: 'bold', color: '#b45309' },
     locationBadge: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 4, backgroundColor: '#eff6ff', paddingHorizontal: 6, paddingVertical: 3, borderRadius: 6 },
     locationBadgeText: { fontSize: 10, color: '#3b82f6', fontWeight: '600' },
     mapEmbedSmallWrap: { marginTop: 8, borderRadius: 10, overflow: 'hidden' },
