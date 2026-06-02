@@ -29,7 +29,14 @@ const httpsPost = (url, data) => {
                         resolve({ success: true, raw: body });
                     }
                 } else {
-                    reject(new Error(`Status Code: ${res.statusCode}, Body: ${body}`));
+                    // Include response details on the Error object so callers can inspect status/headers/body
+                    const err = new Error(`Status Code: ${res.statusCode}, Body: ${body}`);
+                    err.response = {
+                        statusCode: res.statusCode,
+                        headers: res.headers,
+                        body: body
+                    };
+                    reject(err);
                 }
             });
         });
