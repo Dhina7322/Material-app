@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, Platform, S
 import Svg, { Line, Path, Polyline } from 'react-native-svg';
 import tw from 'twrnc';
 import { AuthContext } from '../context/AuthContext';
+import api from '../services/api';
 
 import { Ionicons } from '@expo/vector-icons';
 
@@ -65,7 +66,7 @@ const LoginScreen = ({ navigation }) => {
       await login(email.trim(), password, captchaInput.trim());
     } catch (err) {
       if (!err.response) {
-        setErrors({ auth: 'Connection Error: Backend server is unreachable. Check your IP/Network.' });
+        setErrors({ auth: `Connection Error: Backend server is unreachable at ${api.defaults.baseURL || 'unknown'}. Check your IP/Network.` });
       } else {
         setErrors({ auth: err.response.data?.msg || 'Invalid email or password' });
       }

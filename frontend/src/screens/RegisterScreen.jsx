@@ -69,7 +69,10 @@ const RegisterScreen = ({ navigation }) => {
     try {
 
       // Instead of direct registration, send OTP first
-      const response = await api.post('/otp/send-otp', { email: email.trim() });
+      const response = await api.post('/otp/send-otp', { 
+        email: email.trim(),
+        employeeId: trimmedId
+      });
       const devOtp = response.data?.devOtp;
       const debugDurationMs = response.data?.debugDurationMs;
 
@@ -87,7 +90,7 @@ const RegisterScreen = ({ navigation }) => {
       });
     } catch (err) {
       if (!err.response) {
-        setErrors({ auth: 'Connection Error: Backend server is unreachable. Check your IP/Network.' });
+        setErrors({ auth: `Connection Error: Backend server is unreachable at ${api.defaults.baseURL || 'unknown'}. Check your IP/Network.` });
       } else {
         const debugMsg = err.response.data?.debug;
         const msg = err.response.data?.msg || 'Could not send verification code. Please try again.';

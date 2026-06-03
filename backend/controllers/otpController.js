@@ -10,6 +10,20 @@ exports.sendOtp = async (req, res) => {
     }
 
     try {
+        const User = require('../models/User');
+        const userExists = await User.findOne({ email: email.trim().toLowerCase() });
+        if (userExists) {
+            return res.status(400).json({ msg: 'Email is already registered' });
+        }
+
+        if (req.body.employeeId) {
+            const cleanId = req.body.employeeId.trim().toUpperCase();
+            const employeeExists = await User.findOne({ employeeId: cleanId });
+            if (employeeExists) {
+                return res.status(400).json({ msg: 'Employee ID is already in use' });
+            }
+        }
+
         // Generate 6‑digit OTP
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const newOtp = new Otp({ email, otp, attempts: 0 });

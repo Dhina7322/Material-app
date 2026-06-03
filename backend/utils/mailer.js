@@ -101,28 +101,28 @@ const sendEmail = async (to, subject, text, html = null, origin = null) => {
     // Render Free Tier blocks SMTP ports 465, 587, 25.
     // Dynamically construct the proxy URL based on the request's origin (Vercel deployment URL)
     
-    // Only use proxy in production environments
+    // Only use proxy in production environments (Render blocks port 465/587) unless EMAIL_PROXY_URL is explicitly set
     const isProd = process.env.NODE_ENV === 'production';
     const isLocal = origin && (origin.includes('localhost') || origin.includes('192.168') || origin.includes('127.0.0.1') || origin.includes('10.0.2.2'));
     
     let proxyUrl = '';
-    // Prefer the request's origin header (works in web / Expo dev)
-    if (origin) {
-      // If the origin looks like a Vercel preview deployment, use it directly
-      // Example: https://material-8vmx45r2u-arou-s-projects.vercel.app
-      proxyUrl = `${origin}/api/send-email`;
-    } else if (process.env.EMAIL_PROXY_URL) {
-      // Fallback to configured env var – ensure it ends with the API path
-      proxyUrl = process.env.EMAIL_PROXY_URL.replace(/\/*$/,'') + '/api/send-email';
-    }
-    // If still empty, default to the production Vercel URL (hard‑coded)
-    if (!proxyUrl) {
-      const defaultVercel = process.env.DEFAULT_VERCEL_URL || 'https://material-request-app.vercel.app';
-      proxyUrl = `${defaultVercel.replace(/\/*$/,'')}/api/send-email`;
-    }
-    // If still empty after all attempts, abort with clear error
-    if (!proxyUrl) {
-      throw new Error('Unable to determine email proxy URL – set EMAIL_PROXY_URL or DEFAULT_VERCEL_URL environment variable');
+    const shouldUseProxy = (isProd && !isLocal) || process.env.EMAIL_PROXY_URL;
+    
+    if (shouldUseProxy) {
+      // Prefer the request's origin header (works in web / Expo dev)
+      if (origin) {
+        // If the origin looks like a Vercel preview deployment, use it directly
+        // Example: https://material-8vmx45r2u-arou-s-projects.vercel.app
+        proxyUrl = `${origin}/api/send-email`;
+      } else if (process.env.EMAIL_PROXY_URL) {
+        // Fallback to configured env var – ensure it ends with the API path
+        proxyUrl = process.env.EMAIL_PROXY_URL.replace(/\/*$/,'') + '/api/send-email';
+      }
+      // If still empty, default to the production Vercel URL (hard‑coded)
+      if (!proxyUrl) {
+        const defaultVercel = process.env.DEFAULT_VERCEL_URL || 'https://material-request-app.vercel.app';
+        proxyUrl = `${defaultVercel.replace(/\/*$/,'')}/api/send-email`;
+      }
     }
     
     // If SendGrid API key is present, prefer sending directly via SendGrid (works in serverless)

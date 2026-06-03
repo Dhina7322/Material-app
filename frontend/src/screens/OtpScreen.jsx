@@ -167,6 +167,12 @@ const OtpScreen = ({ navigation, route }) => {
                                     />
                                     {error ? <Text style={styles.errorText}>{error}</Text> : null}
                                     {success ? <Text style={styles.successText}>{success}</Text> : null}
+                                    {registrationData?.devOtp ? (
+                                        <View style={styles.devOtpContainer}>
+                                            <Text allowFontScaling={false} style={styles.devOtpLabel}>DEVELOPMENT OTP (BYPASS)</Text>
+                                            <Text allowFontScaling={false} style={styles.devOtpValue}>{registrationData.devOtp}</Text>
+                                        </View>
+                                    ) : null}
                                 </View>
 
                                 {/* Verify Button */}
