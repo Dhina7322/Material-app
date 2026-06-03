@@ -52,47 +52,49 @@ const httpsPost = (url, data) => {
 
 // Send using SendGrid API (preferred for serverless environments)
 const sendWithSendGrid = (to, subject, text, html = null) => {
-    return new Promise((resolve, reject) => {
-        const payload = {
-            personalizations: [{ to: [{ email: to }] }],
-            from: { email: process.env.SENDGRID_FROM || process.env.EMAIL_USER },
-            subject: subject,
-            content: [{ type: 'text/plain', value: text }]
-        };
-        if (html) {
-            payload.content = [{ type: 'text/html', value: html }];
+  return new Promise((resolve, reject) => {
+    const payload = {
+      personalizations: [{ to: [{ email: to }] }],
+      from: { email: process.env.SENDGRID_FROM || process.env.EMAIL_USER },
+      subject,
+      content: [{ type: 'text/plain', value: text }]
+    };
+    if (html) payload.content = [{ type: 'text/html', value: html }];
+
+    const postData = JSON.stringify(payload);
+    const options = {
+      hostname: 'api.sendgrid.com',
+      path: '/v3/mail/send',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(postData),
+        'Authorization': `Bearer ${process.env.SENDGRID_API_KEY}`
+      }
+    };
+
+    const req = https.request(options, (res) => {
+      let body = '';
+      res.on('data', (c) => (body += c));
+      res.on('end', () => {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          console.log('[MAILER] SendGrid SUCCESS');
+          resolve({ success: true, raw: body });
+        } else {
+          const err = new Error(`SendGrid ${res.statusCode}: ${body}`);
+          err.response = { statusCode: res.statusCode, headers: res.headers, body };
+          console.error('[MAILER] SendGrid FAILED →', err.message);
+          reject(err);
         }
-
-        const postData = JSON.stringify(payload);
-        const options = {
-            hostname: 'api.sendgrid.com',
-            path: '/v3/mail/send',
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Content-Length': Buffer.byteLength(postData),
-                'Authorization': `Bearer ${process.env.SENDGRID_API_KEY}`
-            }
-        };
-
-        const req = https.request(options, (res) => {
-            let body = '';
-            res.on('data', (chunk) => body += chunk);
-            res.on('end', () => {
-                if (res.statusCode >= 200 && res.statusCode < 300) {
-                    resolve({ success: true, raw: body });
-                } else {
-                    const err = new Error(`SendGrid Status Code: ${res.statusCode}, Body: ${body}`);
-                    err.response = { statusCode: res.statusCode, headers: res.headers, body };
-                    reject(err);
-                }
-            });
-        });
-
-        req.on('error', (err) => reject(err));
-        req.write(postData);
-        req.end();
+      });
     });
+    req.on('error', (e) => {
+      console.error('[MAILER] SendGrid request error →', e.message);
+      reject(e);
+    });
+    req.write(postData);
+    req.end();
+  });
 };
 
 const sendEmail = async (to, subject, text, html = null, origin = null) => {
