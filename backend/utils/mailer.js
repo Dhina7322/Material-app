@@ -164,7 +164,8 @@ const sendEmail = async (to, subject, text, html = null, origin = null) => {
     // ──── STRATEGY 3: HTTP Proxy ────
     let proxyUrl = '';
     if (process.env.EMAIL_PROXY_URL) {
-        proxyUrl = process.env.EMAIL_PROXY_URL.replace(/\/*$/, '') + '/api/send-email';
+        // Use the configured proxy URL directly – it already points to the Vercel function
+        proxyUrl = process.env.EMAIL_PROXY_URL;
     } else if (origin && !origin.includes('localhost') && !origin.includes('192.168') && !origin.includes('127.0.0.1') && !origin.includes('10.0.2.2')) {
         proxyUrl = `${origin}/api/send-email`;
     } else {
