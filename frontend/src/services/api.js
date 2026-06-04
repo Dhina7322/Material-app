@@ -17,13 +17,15 @@ const CLOUD_URL = "https://material-app-zhm4.onrender.com";
  */
 const getBaseUrl = () => {
   if (__DEV__) {
-    // Web – use localhost to reach the local backend
+    // For mobile (Android / iOS) during development, use the cloud URL to avoid LAN connectivity issues.
+    if (Platform.OS === 'android' || Platform.OS === 'ios') {
+      return CLOUD_URL;
+    }
+    // Web – use localhost when developing in the browser.
     if (Platform.OS === 'web') {
       return 'http://localhost:5005';
     }
-
-    // Mobile (Android / iOS) – first try the LAN IP from Expo.
-    // This works for PHYSICAL devices connected to the same network.
+    // Fallback to LAN IP for other cases (e.g., physical device with debuggerHost).
     const debuggerHost =
       Constants?.expoConfig?.hostUri ||
       Constants?.manifest?.debuggerHost;
@@ -31,16 +33,13 @@ const getBaseUrl = () => {
       const ip = debuggerHost.split(':')[0];
       return `http://${ip}:5005`;
     }
-
-    // If debuggerHost is unavailable, fall back to emulator/simulator defaults
+    // Emulator defaults
     if (Platform.OS === 'android') {
-      return 'http://10.0.2.2:5005'; // Android emulator → host machine
+      return 'http://10.0.2.2:5005';
     }
     if (Platform.OS === 'ios') {
-      return 'http://localhost:5005'; // iOS simulator
+      return 'http://localhost:5005';
     }
-
-    // Last-resort fallback
     return 'http://192.168.0.102:5005';
   }
   // Production – use the deployed cloud URL

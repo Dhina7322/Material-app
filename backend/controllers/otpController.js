@@ -3,7 +3,12 @@ const Otp = require('../models/Otp');
 // const crypto = require('crypto'); // Removed unused import
 
 exports.sendOtp = async (req, res) => {
-    const { email } = req.body;
+    let { email } = req.body;
+
+    // Normalize email to lowercase and trim whitespace for consistency
+    if (email) {
+        email = email.trim().toLowerCase();
+    }
 
     if (!email || !/\S+@\S+\.\S+/.test(email)) {
         return res.status(400).json({ msg: 'Please provide a valid email address' });
@@ -11,7 +16,7 @@ exports.sendOtp = async (req, res) => {
 
     try {
         const User = require('../models/User');
-        const userExists = await User.findOne({ email: email.trim().toLowerCase() });
+        const userExists = await User.findOne({ email });
         if (userExists) {
             return res.status(400).json({ msg: 'Email is already registered' });
         }
@@ -44,12 +49,21 @@ exports.sendOtp = async (req, res) => {
 
         // Return success immediately (don't expose OTP in production)
         const responsePayload = { msg: 'Verification code sent to ' + email, debugDurationMs: Date.now() - sendStart };
+        // In development, expose the OTP for easier testing
         if (process.env.NODE_ENV !== 'production') responsePayload.devOtp = otp;
         return res.json(responsePayload);
     } catch (err) {
-        console.error('OTP Send Error:', err.message);
-        res.status(500).json({ msg: 'Error processing verification' });
+        // Log full error for debugging purposes
+        console.error('OTP Send Error:', err);
+        const errorMsg = err.message || 'Error processing verification';
+        // Include debug details only in non‑production environments
+        const errorResponse = { msg: errorMsg };
+        if (process.env.NODE_ENV !== 'production') {
+            errorResponse.debug = err.stack;
+        }
+        res.status(500).json(errorResponse);
     }
+
 };
 
 exports.verifyOtp = async (req, res) => {
@@ -60,16 +74,18 @@ exports.verifyOtp = async (req, res) => {
     }
 
     try {
-        const otpRecord = await Otp.findOne({ email });
+        // Use normalized email for lookup to avoid case mismatches
+        const normalizedEmail = email.trim().toLowerCase();
+        const otpRecord = await Otp.findOne({ email: normalizedEmail });
 
         if (!otpRecord) {
             return res.status(400).json({ msg: 'OTP expired or not found. Please request a new code.' });
         }
 
         // Lock after 3 failed attempts
-if (otpRecord.attempts >= 3) {
+        if (otpRecord.attempts >= 3) {
             // Use deleteOne without awaiting to not delay the response
-            Otp.deleteOne({ email }).catch(() => { });
+            Otp.deleteOne({ email: normalizedEmail }).catch(() => { });
             return res.status(400).json({ msg: 'Too many failed attempts. Please request a new OTP.' });
         }
 
@@ -81,7 +97,7 @@ if (otpRecord.attempts >= 3) {
         }
 
         // Success — delete OTP without blocking the success response
-        Otp.deleteOne({ email }).catch(() => { });
+        Otp.deleteOne({ email: normalizedEmail }).catch(() => { });
         res.json({ success: true, msg: 'OTP verified successfully' });
 
     } catch (err) {
@@ -89,3 +105,4 @@ if (otpRecord.attempts >= 3) {
         res.status(500).json({ msg: 'Server error during verification' });
     }
 };
+// Duplicated block removed
