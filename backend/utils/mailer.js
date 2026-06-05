@@ -1,195 +1,103 @@
 // utils/mailer.js
+// ─────────────────────────────────────────────────────────────────────
+//  Pure Nodemailer email sender – no external APIs, no proxy.
+//
+//  Tries Gmail SMTP with two port configurations in sequence:
+//    1. Port 587 + STARTTLS  (works on Render and most hosting)
+//    2. Port 465 + SSL       (fallback for environments that prefer SSL)
+//
+//  Required env vars:
+//    EMAIL_USER=managemadhura123@gmail.com
+//    EMAIL_PASS=<16-char Gmail App Password with spaces removed>
+// ─────────────────────────────────────────────────────────────────────
+'use strict';
+
 const nodemailer = require('nodemailer');
-const dns = require('dns').promises;
-const https = require('https');
 
-const httpsPost = (url, data) => {
-    return new Promise((resolve, reject) => {
-        const urlObj = new URL(url);
-        const postData = JSON.stringify(data);
+/**
+ * Try sending via a specific port/secure combination.
+ * Returns the nodemailer `info` object on success, throws on failure.
+ */
+async function attemptSend(to, subject, text, html, port, secure) {
+    console.log(`[MAILER] Trying Gmail SMTP → port ${port} (secure=${secure})…`);
 
-        const options = {
-            hostname: urlObj.hostname,
-            path: urlObj.pathname + urlObj.search,
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Content-Length': Buffer.byteLength(postData)
-            }
-        };
-
-        const req = https.request(options, (res) => {
-            let body = '';
-            res.on('data', (chunk) => body += chunk);
-            res.on('end', () => {
-                if (res.statusCode >= 200 && res.statusCode < 300) {
-                    try {
-                        resolve(JSON.parse(body));
-                    } catch (e) {
-                        resolve({ success: true, raw: body });
-                    }
-                } else {
-                    // Include response details on the Error object so callers can inspect status/headers/body
-                    const err = new Error(`Status Code: ${res.statusCode}, Body: ${body}`);
-                    err.response = {
-                        statusCode: res.statusCode,
-                        headers: res.headers,
-                        body: body
-                    };
-                    reject(err);
-                }
-            });
-        });
-
-        req.on('error', (err) => {
-            reject(err);
-        });
-
-        req.write(postData);
-        req.end();
+    const transporter = nodemailer.createTransport({
+        host   : 'smtp.gmail.com',
+        port,
+        secure,                          // true = SSL on 465, false = STARTTLS on 587
+        auth   : {
+            user : process.env.EMAIL_USER,
+            pass : process.env.EMAIL_PASS,
+        },
+        connectionTimeout : 20000,       // 20 s – generous for cold Render starts
+        greetingTimeout   : 10000,
+        socketTimeout     : 20000,
+        tls: {
+            rejectUnauthorized : false,  // avoids cert-chain issues on some hosts
+        },
     });
-};
 
-// Send using SendGrid API (preferred for serverless environments)
-const sendWithSendGrid = (to, subject, text, html = null) => {
-  return new Promise((resolve, reject) => {
-    const payload = {
-      personalizations: [{ to: [{ email: to }] }],
-      from: { email: process.env.SENDGRID_FROM || process.env.EMAIL_USER },
-      subject,
-      content: [{ type: 'text/plain', value: text }]
-    };
-    if (html) payload.content = [{ type: 'text/html', value: html }];
+    // verify() throws immediately if credentials are wrong or host unreachable
+    await transporter.verify();
+    console.log(`[MAILER] transporter.verify() passed on port ${port} ✔`);
 
-    const postData = JSON.stringify(payload);
-    const options = {
-      hostname: 'api.sendgrid.com',
-      path: '/v3/mail/send',
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(postData),
-        'Authorization': `Bearer ${process.env.SENDGRID_API_KEY}`
-      }
-    };
-
-    const req = https.request(options, (res) => {
-      let body = '';
-      res.on('data', (c) => (body += c));
-      res.on('end', () => {
-        if (res.statusCode >= 200 && res.statusCode < 300) {
-          console.log('[MAILER] SendGrid SUCCESS');
-          resolve({ success: true, raw: body });
-        } else {
-          const err = new Error(`SendGrid ${res.statusCode}: ${body}`);
-          err.response = { statusCode: res.statusCode, headers: res.headers, body };
-          console.error('[MAILER] SendGrid FAILED →', err.message);
-          reject(err);
-        }
-      });
+    const info = await transporter.sendMail({
+        from    : `"Madhura Energy" <${process.env.EMAIL_USER}>`,
+        to,
+        subject,
+        text,
+        ...(html ? { html } : {}),
     });
-    req.on('error', (e) => {
-      console.error('[MAILER] SendGrid request error →', e.message);
-      reject(e);
-    });
-    req.write(postData);
-    req.end();
-  });
-};
 
-const sendEmail = async (to, subject, text, html = null, origin = null) => {
-    console.log(`[MAILER] Attempting to send email to: ${to}`);
+    console.log(`✅ [MAILER] Email sent via port ${port} – MessageId: ${info.messageId}`);
+    return info;
+}
 
-    // ──── STRATEGY 1: Direct SMTP via Gmail ────
+/**
+ * sendEmail(to, subject, text, html?)
+ *
+ * Sends an email using Gmail SMTP.
+ * Tries port 587 first (STARTTLS), falls back to port 465 (SSL).
+ *
+ * Returns { success: true, messageId: '…' }
+ * Throws with a descriptive message when both attempts fail.
+ */
+const sendEmail = async (to, subject, text, html = null) => {
+    console.log(`\n[MAILER] ──── Sending email to: ${to} ────`);
+
+    // ── Env-var sanity check ─────────────────────────────────────────
+    if (!process.env.EMAIL_USER) {
+        throw new Error('[MAILER] EMAIL_USER is not set in environment variables.');
+    }
+    if (!process.env.EMAIL_PASS) {
+        throw new Error('[MAILER] EMAIL_PASS is not set in environment variables.');
+    }
+    console.log(`[MAILER] Using account: ${process.env.EMAIL_USER}`);
+
+    // ── Attempt 1: port 587, STARTTLS ────────────────────────────────
     try {
-        console.log(`[MAILER] Trying direct SMTP send to: ${to}`);
-
-        // Resolve smtp.gmail.com to IPv4 to bypass IPv6 connection issues (ENETUNREACH)
-        let host = 'smtp.gmail.com';
-        try {
-            const addresses = await dns.resolve4('smtp.gmail.com');
-            if (addresses && addresses.length > 0) {
-                host = addresses[0];
-                console.log(`[MAILER] Resolved smtp.gmail.com to IPv4 address: ${host}`);
-            }
-        } catch (dnsError) {
-            console.error('[MAILER] DNS resolution failed, using default hostname:', dnsError.message);
-        }
-
-        const transporter = nodemailer.createTransport({
-            host: host,
-            port: 465,
-            secure: true,
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS,
-            },
-            connectionTimeout: 15000,
-            socketTimeout: 15000,
-            tls: {
-                servername: 'smtp.gmail.com',
-                rejectUnauthorized: false
-            },
-        });
-
-        const mailOptions = {
-            from: `"Madhura Energy" <${process.env.EMAIL_USER}>`,
-            to: to,
-            subject: subject,
-            text: text,
-            ...(html ? { html } : {}),
-        };
-
-        const info = await transporter.sendMail(mailOptions);
-        console.log(`✅ [MAILER] SUCCESS (SMTP) - Email sent to ${to} | MessageId: ${info.messageId}`);
+        const info = await attemptSend(to, subject, text, html, 587, false);
         return { success: true, messageId: info.messageId };
-
-    } catch (smtpError) {
-        console.error('❌ [MAILER] Direct SMTP failed:', smtpError.message);
-        // Fall through to next strategy
+    } catch (err587) {
+        console.error(`❌ [MAILER] Port 587 failed: ${err587.message}`);
     }
 
-    // ──── STRATEGY 2: SendGrid API ────
-    if (process.env.SENDGRID_API_KEY) {
-        console.log('[MAILER] Trying SendGrid API...');
-        try {
-            const res = await sendWithSendGrid(to, subject, text, html);
-            console.log(`✅ [MAILER] SUCCESS (SendGrid) - Email sent to ${to}`);
-            return res;
-        } catch (sgErr) {
-            console.error('❌ [MAILER] SendGrid failed:', sgErr.message);
-        }
+    // ── Attempt 2: port 465, SSL ──────────────────────────────────────
+    try {
+        const info = await attemptSend(to, subject, text, html, 465, true);
+        return { success: true, messageId: info.messageId };
+    } catch (err465) {
+        console.error(`❌ [MAILER] Port 465 failed: ${err465.message}`);
     }
 
-    // ──── STRATEGY 3: HTTP Proxy ────
-    let proxyUrl = '';
-    if (process.env.EMAIL_PROXY_URL) {
-        // Use the configured proxy URL directly – it already points to the Vercel function
-        proxyUrl = process.env.EMAIL_PROXY_URL;
-    } else if (origin && !origin.includes('localhost') && !origin.includes('192.168') && !origin.includes('127.0.0.1') && !origin.includes('10.0.2.2')) {
-        proxyUrl = `${origin}/api/send-email`;
-    } else {
-        const defaultVercel = process.env.DEFAULT_VERCEL_URL || 'https://material-request-app.vercel.app';
-        proxyUrl = `${defaultVercel.replace(/\/*$/, '')}/api/send-email`;
-    }
-
-    if (proxyUrl) {
-        console.log(`[MAILER] Trying proxy at: ${proxyUrl}`);
-        try {
-            const result = await httpsPost(proxyUrl, {
-                to, subject, text, html,
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS
-            });
-            console.log(`✅ [MAILER] SUCCESS (Proxy) - Email sent via proxy to ${to}`);
-            return result;
-        } catch (proxyError) {
-            console.error('❌ [MAILER] Proxy failed:', proxyError.message);
-        }
-    }
-
-    // All strategies failed
-    throw new Error(`All email delivery methods failed for ${to}. Check SMTP credentials, SendGrid key, or proxy URL.`);
+    // ── Both failed ───────────────────────────────────────────────────
+    throw new Error(
+        `Failed to send email to ${to}. ` +
+        `Both Gmail SMTP ports (587, 465) are unreachable. ` +
+        `Verify EMAIL_USER and EMAIL_PASS, ensure a Gmail App Password is used ` +
+        `(not your regular password), and check that outbound SMTP is allowed ` +
+        `in your hosting environment.`
+    );
 };
 
 module.exports = { sendEmail };
