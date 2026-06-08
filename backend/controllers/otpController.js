@@ -38,14 +38,21 @@ exports.sendOtp = async (req, res) => {
         await newOtp.save();
 
         const sendStart = Date.now();
-        // Await email delivery so we can surface failures
-        await sendEmail(
-            email,
-            'Your Verification Code',
-            `Your OTP for verification is: ${otp}. This code will expire in 5 minutes.`,
-            // Do NOT delete the OTP on async failure; keep it so the user can still verify if email actually arrives later.
-            // Consider adding an alert or retry mechanism here.
-        );
+        try {
+            // Await email delivery so we can surface failures
+            await sendEmail(
+                email,
+                'Your Verification Code',
+                `Your OTP for verification is: ${otp}. This code will expire in 5 minutes.`
+            );
+        } catch (emailErr) {
+            console.error('Failed to send OTP email:', emailErr.message);
+            // In production, we must fail if email cannot be sent.
+            // In dev/test, we can proceed using devOtp.
+            if (process.env.NODE_ENV === 'production') {
+                return res.status(500).json({ msg: 'Failed to send verification email. Please try again later.' });
+            }
+        }
 
         // Return success immediately (don't expose OTP in production)
         const responsePayload = { msg: 'Verification code sent to ' + email, debugDurationMs: Date.now() - sendStart };

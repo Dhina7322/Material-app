@@ -18,6 +18,7 @@ const OtpScreen = ({ navigation, route }) => {
     }
     const email = registrationData?.email || '';
     const debugDurationMs = registrationData?.debugDurationMs;
+    const devOtp = registrationData?.devOtp;
     const { width } = useWindowDimensions();
     const isMobile = width < 768;
 
@@ -71,10 +72,8 @@ const OtpScreen = ({ navigation, route }) => {
         setError('');
         setLoading(true);
         try {
-            // Step 1: Verify the OTP
-            await api.post('/otp/verify-otp', { email, otp: code });
-
-            // Step 2: Complete registration now that email is verified
+            // Send OTP along with registration data — the register endpoint
+            // verifies the OTP and creates the account in one atomic step.
             const { name, employeeId, email: regEmail, password, role } = registrationData;
             await register(name, employeeId, regEmail, password, role, code);
             // AuthContext sets user → AppNavigator will redirect to Dashboard automatically
@@ -210,6 +209,14 @@ const OtpScreen = ({ navigation, route }) => {
                                         ← Back to Registration
                                     </Text>
                                 </TouchableOpacity>
+
+                                {/* Dev OTP Display (Development Only) */}
+                                {typeof devOtp === 'string' && (
+                                    <View style={styles.devOtpContainer}>
+                                        <Text allowFontScaling={false} style={styles.devOtpLabel}>DEV MODE: AUTO-GENERATED OTP</Text>
+                                        <Text allowFontScaling={false} style={styles.devOtpValue}>{devOtp}</Text>
+                                    </View>
+                                )}
                             </View>
                         </View>
                     </View>
