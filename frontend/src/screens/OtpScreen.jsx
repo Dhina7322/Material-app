@@ -71,7 +71,10 @@ const OtpScreen = ({ navigation, route }) => {
         setError('');
         setLoading(true);
         try {
-            // Complete registration with OTP verification on the backend in one request
+            // Step 1: Verify the OTP
+            await api.post('/otp/verify-otp', { email, otp: code });
+
+            // Step 2: Complete registration now that email is verified
             const { name, employeeId, email: regEmail, password, role } = registrationData;
             await register(name, employeeId, regEmail, password, role, code);
             // AuthContext sets user → AppNavigator will redirect to Dashboard automatically
