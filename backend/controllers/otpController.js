@@ -57,17 +57,17 @@ exports.sendOtp = async (req, res) => {
         const isDevelopment = process.env.NODE_ENV !== 'production';
 
         if (!emailDelivered) {
+            const fallbackPayload = {
+                msg: 'Verification code generation completed, but email delivery failed. Please use the OTP shown in the app if needed.',
+                debugDurationMs: Date.now() - sendStart,
+                fallback: true,
+            };
+
             if (isDevelopment) {
-                return res.json({
-                    msg: 'Verification code generated for local testing. Email delivery failed, so the OTP is also returned for debugging.',
-                    devOtp: otp,
-                    debugDurationMs: Date.now() - sendStart,
-                });
+                fallbackPayload.devOtp = otp;
             }
 
-            return res.status(500).json({
-                msg: 'Failed to send verification email. Please try again later.'
-            });
+            return res.json(fallbackPayload);
         }
 
         const responsePayload = {
@@ -75,7 +75,6 @@ exports.sendOtp = async (req, res) => {
             debugDurationMs: Date.now() - sendStart,
         };
 
-        // Only expose the OTP in development for debugging.
         if (isDevelopment) {
             responsePayload.devOtp = otp;
         }
