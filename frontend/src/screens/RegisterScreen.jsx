@@ -69,14 +69,13 @@ const RegisterScreen = ({ navigation }) => {
     try {
 
       // Instead of direct registration, send OTP first
-      const response = await api.post('/otp/send-otp', { 
+      const response = await api.post('/otp/send-otp', {
         email: email.trim(),
         employeeId: trimmedId
       });
-      const devOtp = response.data?.devOtp;
       const debugDurationMs = response.data?.debugDurationMs;
 
-      // Navigate to OTP screen with registration data (include debugDurationMs for on-device visibility)
+      // Navigate to OTP screen only after the email request succeeds.
       navigation.navigate('Otp', {
         registrationData: JSON.stringify({
           name: name.trim(),
@@ -84,7 +83,6 @@ const RegisterScreen = ({ navigation }) => {
           email: email.trim(),
           password,
           role,
-          devOtp: devOtp, // Pass it along for easy testing
           debugDurationMs: debugDurationMs
         })
       });

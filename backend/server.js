@@ -116,7 +116,12 @@ app.get('/api/admin/high-penalty', authMw, require('./controllers/authController
 
 // Status
 app.get('/api/status', (req, res) => {
-    res.json({ status: 'API is healthy', timestamp: new Date(), version: '2.5' });
+    res.json({
+        status: 'API is healthy',
+        timestamp: new Date(),
+        version: '2.5',
+        emailConfigured: Boolean(process.env.RESEND_API_KEY),
+    });
 });
 
 // ✅ Static Uploads

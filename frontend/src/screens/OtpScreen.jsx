@@ -17,6 +17,10 @@ const OtpScreen = ({ navigation, route }) => {
         console.error("Failed to parse registration data", e);
     }
     const email = registrationData?.email || '';
+<<<<<<< HEAD
+=======
+    const debugDurationMs = registrationData?.debugDurationMs;
+>>>>>>> defbfd7e6389520099c1aca35fc122007d45b9a8
     const { width } = useWindowDimensions();
     const isMobile = width < 768;
 
@@ -203,7 +207,10 @@ const OtpScreen = ({ navigation, route }) => {
                                     </Text>
                                 </TouchableOpacity>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> defbfd7e6389520099c1aca35fc122007d45b9a8
                             </View>
                         </View>
                     </View>
@@ -451,6 +458,13 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#b45309',
         letterSpacing: 4,
+    },
+    devOtpHint: {
+        fontSize: 11,
+        color: '#92400e',
+        textAlign: 'center',
+        marginTop: 6,
+        lineHeight: 16,
     },
 });
 

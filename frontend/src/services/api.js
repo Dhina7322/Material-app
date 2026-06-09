@@ -5,6 +5,7 @@ import Constants from 'expo-constants';
 
 // Cloud deployment URL (Render)
 const CLOUD_URL = "https://material-app-zhm4.onrender.com";
+const LOCAL_BACKEND_URL = 'http://localhost:5005';
 
 /**
  * Determine the base URL for the backend.
@@ -16,16 +17,33 @@ const CLOUD_URL = "https://material-app-zhm4.onrender.com";
  * In production we always use the cloud URL.
  */
 const getBaseUrl = () => {
+  const envOverride =
+    process.env.EXPO_PUBLIC_API_BASE_URL ||
+    process.env.EXPO_PUBLIC_BACKEND_URL ||
+    process.env.REACT_APP_API_BASE_URL;
+
+  const useLocalBackend = process.env.EXPO_PUBLIC_USE_LOCAL_BACKEND === 'true';
+  const isMobile = Platform.OS === 'android' || Platform.OS === 'ios';
+
+  // In Expo Go / mobile builds, prefer the stable deployed backend unless
+  // the developer explicitly asks for a local backend.
+  if (isMobile && !useLocalBackend) {
+    return CLOUD_URL;
+  }
+
+  // Web always uses the deployed backend by default to avoid localhost/CORS issues.
+  if (Platform.OS === 'web' && !useLocalBackend) {
+    return CLOUD_URL;
+  }
+
+  // Only use an explicit backend override when the developer intentionally
+  // asks for local development.
+  if (useLocalBackend && envOverride) {
+    return envOverride.replace(/\/+$/, '');
+  }
+
   if (__DEV__) {
-    // For mobile (Android / iOS) during development, use the cloud URL to avoid LAN connectivity issues.
-    if (Platform.OS === 'android' || Platform.OS === 'ios') {
-      return CLOUD_URL;
-    }
-    // Web – use localhost when developing in the browser.
-    if (Platform.OS === 'web') {
-      return 'http://localhost:5005';
-    }
-    // Fallback to LAN IP for other cases (e.g., physical device with debuggerHost).
+    // Fallback to LAN IP for physical-device local debugging only.
     const debuggerHost =
       Constants?.expoConfig?.hostUri ||
       Constants?.manifest?.debuggerHost;
@@ -33,15 +51,17 @@ const getBaseUrl = () => {
       const ip = debuggerHost.split(':')[0];
       return `http://${ip}:5005`;
     }
+
     // Emulator defaults
     if (Platform.OS === 'android') {
       return 'http://10.0.2.2:5005';
     }
     if (Platform.OS === 'ios') {
-      return 'http://localhost:5005';
+      return LOCAL_BACKEND_URL;
     }
-    return 'http://192.168.0.102:5005';
+    return LOCAL_BACKEND_URL;
   }
+
   // Production – use the deployed cloud URL
   return CLOUD_URL;
 };

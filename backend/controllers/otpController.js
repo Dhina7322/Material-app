@@ -1,6 +1,19 @@
 const { sendEmail } = require('../utils/mailer');
 const Otp = require('../models/Otp');
-// const crypto = require('crypto'); // Removed unused import
+
+const getOtpMailErrorMessage = (error) => {
+    const message = (error && error.message) ? error.message : '';
+
+    if (/RESEND_API_KEY/i.test(message) || /RESEND_FROM/i.test(message)) {
+        return 'OTP email could not be sent because the Resend API credentials are not configured. Set RESEND_API_KEY and RESEND_FROM in your hosting environment, then redeploy.';
+    }
+
+    if (/resend/i.test(message) || /smtp/i.test(message)) {
+        return 'OTP email could not be sent. Check the Resend API key and sender address in the backend environment.';
+    }
+
+    return 'OTP email could not be sent right now. Please try again in a few minutes.';
+};
 
 exports.sendOtp = async (req, res) => {
     let { email } = req.body;
@@ -38,6 +51,8 @@ exports.sendOtp = async (req, res) => {
         await newOtp.save();
 
         const sendStart = Date.now();
+        let emailDelivered = false;
+        let lastEmailError = null;
         try {
             // Await email delivery so we can surface failures
             await sendEmail(
@@ -45,20 +60,25 @@ exports.sendOtp = async (req, res) => {
                 'Your Verification Code',
                 `Your OTP for verification is: ${otp}. This code will expire in 5 minutes.`
             );
+            emailDelivered = true;
         } catch (emailErr) {
+            lastEmailError = emailErr;
             console.error('Failed to send OTP email:', emailErr.message);
-            // In production, we must fail if email cannot be sent.
-            // In dev/test, we can proceed using devOtp.
-            if (process.env.NODE_ENV === 'production') {
-                return res.status(500).json({ msg: 'Failed to send verification email. Please try again later.' });
-            }
         }
 
-        // Return success immediately (don't expose OTP in production)
-        const responsePayload = { msg: 'Verification code sent to ' + email, debugDurationMs: Date.now() - sendStart };
-        // In development, expose the OTP for easier testing
-        if (process.env.NODE_ENV !== 'production') responsePayload.devOtp = otp;
-        return res.json(responsePayload);
+        if (!emailDelivered) {
+            await Otp.deleteMany({ email });
+            const errorMsg = lastEmailError?.message || 'Unknown email delivery error';
+            return res.status(500).json({
+                msg: getOtpMailErrorMessage(lastEmailError),
+                ...(process.env.NODE_ENV !== 'production' ? { debug: errorMsg } : {}),
+            });
+        }
+
+        return res.status(200).json({
+            msg: 'Verification code sent to ' + email,
+            debugDurationMs: Date.now() - sendStart,
+        });
     } catch (err) {
         // Log full error for debugging purposes
         console.error('OTP Send Error:', err);
