@@ -17,8 +17,6 @@ const OtpScreen = ({ navigation, route }) => {
         console.error("Failed to parse registration data", e);
     }
     const email = registrationData?.email || '';
-    const debugDurationMs = registrationData?.debugDurationMs;
-    const devOtp = registrationData?.devOtp;
     const { width } = useWindowDimensions();
     const isMobile = width < 768;
 
@@ -142,11 +140,6 @@ const OtpScreen = ({ navigation, route }) => {
                                         <Text allowFontScaling={false} style={styles.sendingText}>
                                             Sending your code…
                                         </Text>
-                                        {typeof debugDurationMs === 'number' && (
-                                            <Text allowFontScaling={false} style={styles.debugText}>
-                                                Server send time: {debugDurationMs}ms
-                                            </Text>
-                                        )}
                                     </View>
                                 )}
 
@@ -210,13 +203,7 @@ const OtpScreen = ({ navigation, route }) => {
                                     </Text>
                                 </TouchableOpacity>
 
-                                {/* Dev OTP Display (Development Only) */}
-                                {typeof devOtp === 'string' && (
-                                    <View style={styles.devOtpContainer}>
-                                        <Text allowFontScaling={false} style={styles.devOtpLabel}>DEV MODE: AUTO-GENERATED OTP</Text>
-                                        <Text allowFontScaling={false} style={styles.devOtpValue}>{devOtp}</Text>
-                                    </View>
-                                )}
+
                             </View>
                         </View>
                     </View>
