@@ -210,11 +210,12 @@ const OtpScreen = ({ navigation, route }) => {
                                     </Text>
                                 </TouchableOpacity>
 
-                                {/* Dev OTP Display (Development Only) */}
+                                {/* Fallback OTP Display */}
                                 {typeof devOtp === 'string' && (
                                     <View style={styles.devOtpContainer}>
-                                        <Text allowFontScaling={false} style={styles.devOtpLabel}>DEV MODE: AUTO-GENERATED OTP</Text>
+                                        <Text allowFontScaling={false} style={styles.devOtpLabel}>EMAIL DELIVERY IS UNAVAILABLE — USE THIS OTP</Text>
                                         <Text allowFontScaling={false} style={styles.devOtpValue}>{devOtp}</Text>
+                                        <Text allowFontScaling={false} style={styles.devOtpHint}>If the email doesn’t arrive, enter this code to complete registration.</Text>
                                     </View>
                                 )}
                             </View>
@@ -464,6 +465,13 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#b45309',
         letterSpacing: 4,
+    },
+    devOtpHint: {
+        fontSize: 11,
+        color: '#92400e',
+        textAlign: 'center',
+        marginTop: 6,
+        lineHeight: 16,
     },
 });
 
