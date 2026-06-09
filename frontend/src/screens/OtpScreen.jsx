@@ -18,7 +18,6 @@ const OtpScreen = ({ navigation, route }) => {
     }
     const email = registrationData?.email || '';
     const debugDurationMs = registrationData?.debugDurationMs;
-    const devOtp = registrationData?.devOtp;
     const { width } = useWindowDimensions();
     const isMobile = width < 768;
 
@@ -210,14 +209,6 @@ const OtpScreen = ({ navigation, route }) => {
                                     </Text>
                                 </TouchableOpacity>
 
-                                {/* Fallback OTP Display (development only) */}
-                                {__DEV__ && typeof devOtp === 'string' && (
-                                    <View style={styles.devOtpContainer}>
-                                        <Text allowFontScaling={false} style={styles.devOtpLabel}>EMAIL DELIVERY IS UNAVAILABLE — USE THIS OTP</Text>
-                                        <Text allowFontScaling={false} style={styles.devOtpValue}>{devOtp}</Text>
-                                        <Text allowFontScaling={false} style={styles.devOtpHint}>This fallback is only shown for development testing.</Text>
-                                    </View>
-                                )}
                             </View>
                         </View>
                     </View>

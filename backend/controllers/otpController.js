@@ -39,6 +39,7 @@ exports.sendOtp = async (req, res) => {
 
         const sendStart = Date.now();
         let emailDelivered = false;
+        let lastEmailError = null;
         try {
             // Await email delivery so we can surface failures
             await sendEmail(
@@ -48,38 +49,21 @@ exports.sendOtp = async (req, res) => {
             );
             emailDelivered = true;
         } catch (emailErr) {
+            lastEmailError = emailErr;
             console.error('Failed to send OTP email:', emailErr.message);
-            // Keep the registration flow alive even when SMTP is unavailable.
-            // If email delivery fails, return the generated OTP for the app to show
-            // so the user can continue registration instead of getting a hard error.
         }
-
-        const isDevelopment = process.env.NODE_ENV !== 'production';
 
         if (!emailDelivered) {
-            const fallbackPayload = {
-                msg: 'Verification code generation completed, but email delivery failed. Please use the OTP shown in the app if needed.',
-                debugDurationMs: Date.now() - sendStart,
-                fallback: true,
-            };
-
-            if (isDevelopment) {
-                fallbackPayload.devOtp = otp;
-            }
-
-            return res.json(fallbackPayload);
+            return res.status(503).json({
+                msg: 'Could not send the verification email right now. Please try again later or contact support.',
+                debug: lastEmailError?.message,
+            });
         }
 
-        const responsePayload = {
+        return res.json({
             msg: 'Verification code sent to ' + email,
             debugDurationMs: Date.now() - sendStart,
-        };
-
-        if (isDevelopment) {
-            responsePayload.devOtp = otp;
-        }
-
-        return res.json(responsePayload);
+        });
     } catch (err) {
         // Log full error for debugging purposes
         console.error('OTP Send Error:', err);
