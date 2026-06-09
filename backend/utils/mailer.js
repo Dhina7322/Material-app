@@ -14,7 +14,7 @@ const sendEmail = async (to, subject, text, html = null) => {
     console.log(`\n[MAILER] ──── Sending email to: ${to} via Resend ────`);
 
     const apiKey = (process.env.RESEND_API_KEY || '').trim();
-    const from = (process.env.RESEND_FROM || 'onboarding@resend.dev').trim();
+    const from = (process.env.RESEND_FROM || 'managemadhura123@gmail.com').trim();
 
     if (!apiKey) {
         throw new Error('[MAILER] RESEND_API_KEY is not set in environment variables.');
