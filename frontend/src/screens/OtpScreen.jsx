@@ -210,12 +210,12 @@ const OtpScreen = ({ navigation, route }) => {
                                     </Text>
                                 </TouchableOpacity>
 
-                                {/* Fallback OTP Display */}
-                                {typeof devOtp === 'string' && (
+                                {/* Fallback OTP Display (development only) */}
+                                {__DEV__ && typeof devOtp === 'string' && (
                                     <View style={styles.devOtpContainer}>
                                         <Text allowFontScaling={false} style={styles.devOtpLabel}>EMAIL DELIVERY IS UNAVAILABLE — USE THIS OTP</Text>
                                         <Text allowFontScaling={false} style={styles.devOtpValue}>{devOtp}</Text>
-                                        <Text allowFontScaling={false} style={styles.devOtpHint}>If the email doesn’t arrive, enter this code to complete registration.</Text>
+                                        <Text allowFontScaling={false} style={styles.devOtpHint}>This fallback is only shown for development testing.</Text>
                                     </View>
                                 )}
                             </View>

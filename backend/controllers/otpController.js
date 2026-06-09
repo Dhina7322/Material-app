@@ -54,19 +54,29 @@ exports.sendOtp = async (req, res) => {
             // so the user can continue registration instead of getting a hard error.
         }
 
+        const isDevelopment = process.env.NODE_ENV !== 'production';
+
+        if (!emailDelivered) {
+            if (isDevelopment) {
+                return res.json({
+                    msg: 'Verification code generated for local testing. Email delivery failed, so the OTP is also returned for debugging.',
+                    devOtp: otp,
+                    debugDurationMs: Date.now() - sendStart,
+                });
+            }
+
+            return res.status(500).json({
+                msg: 'Failed to send verification email. Please try again later.'
+            });
+        }
+
         const responsePayload = {
-            msg: emailDelivered
-                ? 'Verification code sent to ' + email
-                : 'Verification code generated. If the email does not arrive, use the code shown on the next screen.',
+            msg: 'Verification code sent to ' + email,
             debugDurationMs: Date.now() - sendStart,
         };
 
-        if (!emailDelivered) {
-            responsePayload.devOtp = otp;
-        }
-
-        // In development, also expose the OTP for easier testing.
-        if (process.env.NODE_ENV !== 'production' && emailDelivered) {
+        // Only expose the OTP in development for debugging.
+        if (isDevelopment) {
             responsePayload.devOtp = otp;
         }
 
