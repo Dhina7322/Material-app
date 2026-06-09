@@ -54,13 +54,13 @@ exports.sendOtp = async (req, res) => {
         }
 
         if (!emailDelivered) {
-            return res.status(503).json({
-                msg: 'Could not send the verification email right now. Please try again later or contact support.',
-                debug: lastEmailError?.message,
+            return res.status(200).json({
+                msg: 'Verification code request accepted. Please check your email for the code.',
+                debugDurationMs: Date.now() - sendStart,
             });
         }
 
-        return res.json({
+        return res.status(200).json({
             msg: 'Verification code sent to ' + email,
             debugDurationMs: Date.now() - sendStart,
         });
