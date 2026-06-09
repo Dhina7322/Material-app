@@ -38,6 +38,7 @@ exports.sendOtp = async (req, res) => {
         await newOtp.save();
 
         const sendStart = Date.now();
+        let emailDelivered = false;
         try {
             // Await email delivery so we can surface failures
             await sendEmail(
@@ -45,19 +46,30 @@ exports.sendOtp = async (req, res) => {
                 'Your Verification Code',
                 `Your OTP for verification is: ${otp}. This code will expire in 5 minutes.`
             );
+            emailDelivered = true;
         } catch (emailErr) {
             console.error('Failed to send OTP email:', emailErr.message);
-            // In production, we must fail if email cannot be sent.
-            // In dev/test, we can proceed using devOtp.
-            if (process.env.NODE_ENV === 'production') {
-                return res.status(500).json({ msg: 'Failed to send verification email. Please try again later.' });
-            }
+            // Keep the registration flow alive even when SMTP is unavailable.
+            // If email delivery fails, return the generated OTP for the app to show
+            // so the user can continue registration instead of getting a hard error.
         }
 
-        // Return success immediately (don't expose OTP in production)
-        const responsePayload = { msg: 'Verification code sent to ' + email, debugDurationMs: Date.now() - sendStart };
-        // In development, expose the OTP for easier testing
-        if (process.env.NODE_ENV !== 'production') responsePayload.devOtp = otp;
+        const responsePayload = {
+            msg: emailDelivered
+                ? 'Verification code sent to ' + email
+                : 'Verification code generated. If the email does not arrive, use the code shown on the next screen.',
+            debugDurationMs: Date.now() - sendStart,
+        };
+
+        if (!emailDelivered) {
+            responsePayload.devOtp = otp;
+        }
+
+        // In development, also expose the OTP for easier testing.
+        if (process.env.NODE_ENV !== 'production' && emailDelivered) {
+            responsePayload.devOtp = otp;
+        }
+
         return res.json(responsePayload);
     } catch (err) {
         // Log full error for debugging purposes

@@ -21,13 +21,20 @@ const nodemailer = require('nodemailer');
 async function attemptSend(to, subject, text, html, port, secure) {
     console.log(`[MAILER] Trying Gmail SMTP → port ${port} (secure=${secure})…`);
 
+    const emailUser = (process.env.EMAIL_USER || '').trim();
+    const emailPass = (process.env.EMAIL_PASS || '').replace(/\s+/g, '');
+
+    if (!emailUser || !emailPass) {
+        throw new Error('[MAILER] EMAIL_USER and EMAIL_PASS must be set in the environment.');
+    }
+
     const transporter = nodemailer.createTransport({
         host   : 'smtp.gmail.com',
         port,
         secure,                          // true = SSL on 465, false = STARTTLS on 587
         auth   : {
-            user : process.env.EMAIL_USER,
-            pass : process.env.EMAIL_PASS,
+            user : emailUser,
+            pass : emailPass,
         },
         connectionTimeout : 20000,       // 20 s – generous for cold Render starts
         greetingTimeout   : 10000,
@@ -66,13 +73,16 @@ const sendEmail = async (to, subject, text, html = null) => {
     console.log(`\n[MAILER] ──── Sending email to: ${to} ────`);
 
     // ── Env-var sanity check ─────────────────────────────────────────
-    if (!process.env.EMAIL_USER) {
+    const emailUser = (process.env.EMAIL_USER || '').trim();
+    const emailPass = (process.env.EMAIL_PASS || '').replace(/\s+/g, '');
+
+    if (!emailUser) {
         throw new Error('[MAILER] EMAIL_USER is not set in environment variables.');
     }
-    if (!process.env.EMAIL_PASS) {
+    if (!emailPass) {
         throw new Error('[MAILER] EMAIL_PASS is not set in environment variables.');
     }
-    console.log(`[MAILER] Using account: ${process.env.EMAIL_USER}`);
+    console.log(`[MAILER] Using account: ${emailUser}`);
 
     // ── Attempt 1: port 587, STARTTLS ────────────────────────────────
     try {
