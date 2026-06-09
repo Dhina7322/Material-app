@@ -1,14 +1,30 @@
 const cron = require('node-cron');
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const MaterialRequest = require('../models/MaterialRequest');
 
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
+const sendReminderEmail = async (to, subject, text) => {
+    const apiKey = (process.env.RESEND_API_KEY || '').trim();
+    const from = (process.env.RESEND_FROM || 'onboarding@resend.dev').trim();
+
+    if (!apiKey) {
+        console.warn('[CRON] RESEND_API_KEY is not configured; skipping reminder email.');
+        return;
     }
-});
+
+    const resend = new Resend(apiKey);
+    const result = await resend.emails.send({
+        from,
+        to: [to],
+        subject,
+        text,
+    });
+
+    if (result.error) {
+        throw new Error(result.error.message || 'Resend reminder email failed');
+    }
+
+    console.log(`[MAIL] Reminder sent to ${to} via Resend (id: ${result.data?.id})`);
+};
 
 const setupCronJobs = (io) => {
     // Run every hour at the top of the hour: '0 * * * *'
@@ -29,21 +45,14 @@ const setupCronJobs = (io) => {
                 });
 
                 for (const request of pendingRequests) {
-                    // 1. Send Email Alert
-                    const mailOptions = {
-                        from: process.env.EMAIL_USER,
-                        to: request.employeeEmail,
-                        subject: '🔔 Material Return Reminder',
-                        text: `Hi ${request.employeeName},\n\nThis is your hourly reminder to return the material "${request.materialName}" before 6:00 PM today. Please ensure you capture a photo when returning the material.\n\nThank you!`
-                    };
-
-                    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-                        try {
-                            await transporter.sendMail(mailOptions);
-                            console.log(`[MAIL] Reminder sent to ${request.employeeEmail}`);
-                        } catch (mailErr) {
-                            console.error(`[MAIL] Error:`, mailErr.message);
-                        }
+                    try {
+                        await sendReminderEmail(
+                            request.employeeEmail,
+                            '🔔 Material Return Reminder',
+                            `Hi ${request.employeeName},\n\nThis is your hourly reminder to return the material "${request.materialName}" before 6:00 PM today. Please ensure you capture a photo when returning the material.\n\nThank you!`
+                        );
+                    } catch (mailErr) {
+                        console.error('[MAIL] Error:', mailErr.message);
                     }
 
                     // 2. Send In-App Alert via Socket.io

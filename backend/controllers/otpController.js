@@ -1,6 +1,19 @@
 const { sendEmail } = require('../utils/mailer');
 const Otp = require('../models/Otp');
-// const crypto = require('crypto'); // Removed unused import
+
+const getOtpMailErrorMessage = (error) => {
+    const message = (error && error.message) ? error.message : '';
+
+    if (/RESEND_API_KEY/i.test(message) || /RESEND_FROM/i.test(message)) {
+        return 'OTP email could not be sent because the Resend API credentials are not configured. Set RESEND_API_KEY and RESEND_FROM in your hosting environment, then redeploy.';
+    }
+
+    if (/resend/i.test(message) || /smtp/i.test(message)) {
+        return 'OTP email could not be sent. Check the Resend API key and sender address in the backend environment.';
+    }
+
+    return 'OTP email could not be sent right now. Please try again in a few minutes.';
+};
 
 exports.sendOtp = async (req, res) => {
     let { email } = req.body;
@@ -57,7 +70,7 @@ exports.sendOtp = async (req, res) => {
             await Otp.deleteMany({ email });
             const errorMsg = lastEmailError?.message || 'Unknown email delivery error';
             return res.status(500).json({
-                msg: 'Unable to send the OTP email right now. Please verify the SMTP email settings and try again.',
+                msg: getOtpMailErrorMessage(lastEmailError),
                 ...(process.env.NODE_ENV !== 'production' ? { debug: errorMsg } : {}),
             });
         }
