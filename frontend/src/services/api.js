@@ -22,22 +22,28 @@ const getBaseUrl = () => {
     process.env.EXPO_PUBLIC_BACKEND_URL ||
     process.env.REACT_APP_API_BASE_URL;
 
-  if (envOverride) {
+  const useLocalBackend = process.env.EXPO_PUBLIC_USE_LOCAL_BACKEND === 'true';
+  const isMobile = Platform.OS === 'android' || Platform.OS === 'ios';
+
+  // In Expo Go / mobile builds, prefer the stable deployed backend unless
+  // the developer explicitly asks for a local backend.
+  if (isMobile && !useLocalBackend) {
+    return CLOUD_URL;
+  }
+
+  // Web always uses the deployed backend by default to avoid localhost/CORS issues.
+  if (Platform.OS === 'web' && !useLocalBackend) {
+    return CLOUD_URL;
+  }
+
+  // Only use an explicit backend override when the developer intentionally
+  // asks for local development.
+  if (useLocalBackend && envOverride) {
     return envOverride.replace(/\/+$/, '');
   }
 
   if (__DEV__) {
-    // Web development should use the deployed backend by default to avoid localhost/CORS issues.
-    if (Platform.OS === 'web') {
-      return CLOUD_URL;
-    }
-
-    // Mobile development: prefer the cloud URL to avoid LAN issues in Expo Go.
-    if (Platform.OS === 'android' || Platform.OS === 'ios') {
-      return CLOUD_URL;
-    }
-
-    // Fallback to LAN IP for other cases (e.g., physical device with debuggerHost).
+    // Fallback to LAN IP for physical-device local debugging only.
     const debuggerHost =
       Constants?.expoConfig?.hostUri ||
       Constants?.manifest?.debuggerHost;
