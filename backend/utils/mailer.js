@@ -104,9 +104,9 @@ const sendEmail = async (to, subject, text, html = null) => {
     throw new Error(
         `Failed to send email to ${to}. ` +
         `Both Gmail SMTP ports (587, 465) are unreachable. ` +
-        `Verify EMAIL_USER and EMAIL_PASS, ensure a Gmail App Password is used ` +
-        `(not your regular password), and check that outbound SMTP is allowed ` +
-        `in your hosting environment.`
+        `Verify EMAIL_USER and EMAIL_PASS are set in your hosting environment, ` +
+        `ensure you are using a Gmail App Password (not your regular password), ` +
+        `and confirm outbound SMTP is allowed.`
     );
 };
 

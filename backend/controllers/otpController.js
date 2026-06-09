@@ -54,9 +54,11 @@ exports.sendOtp = async (req, res) => {
         }
 
         if (!emailDelivered) {
-            return res.status(200).json({
-                msg: 'Verification code request accepted. Please check your email for the code.',
-                debugDurationMs: Date.now() - sendStart,
+            await Otp.deleteMany({ email });
+            const errorMsg = lastEmailError?.message || 'Unknown email delivery error';
+            return res.status(500).json({
+                msg: 'Unable to send the OTP email right now. Please verify the SMTP email settings and try again.',
+                ...(process.env.NODE_ENV !== 'production' ? { debug: errorMsg } : {}),
             });
         }
 
