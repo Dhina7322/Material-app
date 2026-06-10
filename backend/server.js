@@ -120,7 +120,7 @@ app.get('/api/status', (req, res) => {
         status: 'API is healthy',
         timestamp: new Date(),
         version: '2.5',
-        emailConfigured: Boolean(process.env.RESEND_API_KEY),
+        emailConfigured: Boolean(process.env.SMTP_USER || process.env.EMAIL_USER),
     });
 });
 

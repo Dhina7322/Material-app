@@ -6,7 +6,6 @@ require('./config/env');
     process.env.SMTP_USER ||
     process.env.EMAIL_FROM ||
     process.env.EMAIL_USER ||
-    process.env.RESEND_FROM ||
     '';
   const to = process.argv[2] || process.env.TEST_EMAIL || from;
 

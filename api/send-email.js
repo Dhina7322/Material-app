@@ -35,7 +35,7 @@ module.exports = async (req, res) => {
     });
 
     const mailOptions = {
-      from: `"Material App" <${user}>`,
+      from: `"Madhura Energy" <${user}>`,
       to,
       subject,
       text,

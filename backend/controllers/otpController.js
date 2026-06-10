@@ -4,19 +4,11 @@ const Otp = require('../models/Otp');
 const getOtpMailErrorMessage = (error) => {
     const message = (error && error.message) ? error.message : '';
 
-    if (/only send testing emails/i.test(message)) {
-        return 'OTP email is not configured for this recipient. Add SMTP_USER and SMTP_PASS for local testing, or verify a sender domain in Resend.';
+    if (/credentials/i.test(message) || /SMTP credentials/i.test(message) || /auth/i.test(message)) {
+        return 'OTP email could not be sent because the SMTP credentials are not configured or are invalid. Check EMAIL_USER and EMAIL_PASS (or SMTP_USER and SMTP_PASS) in the backend environment.';
     }
 
-    if (/RESEND_API_KEY/i.test(message) || /RESEND_FROM/i.test(message)) {
-        return 'OTP email could not be sent because the Resend API credentials are not configured. Set RESEND_API_KEY and RESEND_FROM in your hosting environment, then redeploy.';
-    }
-
-    if (/resend/i.test(message) || /smtp/i.test(message)) {
-        return 'OTP email could not be sent. Check the backend email settings.';
-    }
-
-    return 'OTP email could not be sent right now. Please try again in a few minutes.';
+    return 'OTP email could not be sent right now. Check your SMTP/Nodemailer backend settings and try again.';
 };
 
 exports.sendOtp = async (req, res) => {

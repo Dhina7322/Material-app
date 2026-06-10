@@ -1,34 +1,13 @@
 const cron = require('node-cron');
-const { Resend } = require('resend');
+const { sendEmail } = require('./mailer');
 const MaterialRequest = require('../models/MaterialRequest');
 
 const sendReminderEmail = async (to, subject, text) => {
-    const apiKey = (process.env.RESEND_API_KEY || '').trim();
-    const from = (process.env.RESEND_FROM || 'onboarding@resend.dev').trim();
-
-    if (!apiKey) {
-        console.warn('[CRON] RESEND_API_KEY is not configured; skipping reminder email.');
-        return;
+    try {
+        await sendEmail(to, subject, text);
+    } catch (mailErr) {
+        console.error('[CRON] Failed to send reminder email:', mailErr.message);
     }
-
-    if (!from || /@gmail\.com$/i.test(from)) {
-        console.warn('[CRON] RESEND_FROM must be a Resend verified sender/domain; skipping reminder email.');
-        return;
-    }
-
-    const resend = new Resend(apiKey);
-    const result = await resend.emails.send({
-        from,
-        to: [to],
-        subject,
-        text,
-    });
-
-    if (result.error) {
-        throw new Error(result.error.message || 'Resend reminder email failed');
-    }
-
-    console.log(`[MAIL] Reminder sent to ${to} via Resend (id: ${result.data?.id})`);
 };
 
 const setupCronJobs = (io) => {
