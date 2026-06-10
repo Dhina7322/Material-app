@@ -44,7 +44,7 @@ const OtpScreen = ({ navigation, route }) => {
             navigation.replace('Register');
             return;
         }
-        // Email is already sent by RegisterScreen successfully, we just start the timer
+        // Email is already sent by RegisterScreen successfully.
         setSending(false);
     }, []);
 

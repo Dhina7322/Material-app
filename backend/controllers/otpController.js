@@ -4,12 +4,16 @@ const Otp = require('../models/Otp');
 const getOtpMailErrorMessage = (error) => {
     const message = (error && error.message) ? error.message : '';
 
+    if (/only send testing emails/i.test(message)) {
+        return 'OTP email is not configured for this recipient. Add SMTP_USER and SMTP_PASS for local testing, or verify a sender domain in Resend.';
+    }
+
     if (/RESEND_API_KEY/i.test(message) || /RESEND_FROM/i.test(message)) {
         return 'OTP email could not be sent because the Resend API credentials are not configured. Set RESEND_API_KEY and RESEND_FROM in your hosting environment, then redeploy.';
     }
 
     if (/resend/i.test(message) || /smtp/i.test(message)) {
-        return 'OTP email could not be sent. Check the Resend API key and sender address in the backend environment.';
+        return 'OTP email could not be sent. Check the backend email settings.';
     }
 
     return 'OTP email could not be sent right now. Please try again in a few minutes.';
@@ -67,8 +71,8 @@ exports.sendOtp = async (req, res) => {
         }
 
         if (!emailDelivered) {
-            await Otp.deleteMany({ email });
             const errorMsg = lastEmailError?.message || 'Unknown email delivery error';
+            await Otp.deleteMany({ email });
             return res.status(500).json({
                 msg: getOtpMailErrorMessage(lastEmailError),
                 ...(process.env.NODE_ENV !== 'production' ? { debug: errorMsg } : {}),
@@ -77,6 +81,7 @@ exports.sendOtp = async (req, res) => {
 
         return res.status(200).json({
             msg: 'Verification code sent to ' + email,
+            emailDelivered: true,
             debugDurationMs: Date.now() - sendStart,
         });
     } catch (err) {

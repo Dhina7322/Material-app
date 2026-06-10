@@ -1,30 +1,31 @@
-require('dotenv').config({ path: require('path').join(__dirname, '.env') });
+require('./config/env');
 
 (async () => {
-  const apiKey = (process.env.RESEND_API_KEY || '').trim();
-  const from = (process.env.RESEND_FROM || '').trim();
+  const from =
+    process.env.SMTP_FROM ||
+    process.env.SMTP_USER ||
+    process.env.EMAIL_FROM ||
+    process.env.EMAIL_USER ||
+    process.env.RESEND_FROM ||
+    '';
+  const to = process.argv[2] || process.env.TEST_EMAIL || from;
 
-  if (!apiKey || !from) {
-    console.error('RESEND_API_KEY or RESEND_FROM not set in .env');
+  if (!to) {
+    console.error('Provide a test recipient: node verify-smtp.js someone@example.com');
     process.exit(1);
   }
 
   try {
-    const { Resend } = require('resend');
-    const resend = new Resend(apiKey);
-    const result = await resend.emails.send({
-      from,
-      to: [from],
-      subject: 'Resend API Test',
-      text: 'If you receive this, your Resend API key and sender address are working.',
-    });
+    const { sendEmail } = require('./utils/mailer');
+    const result = await sendEmail(
+      to,
+      'OTP Mailer Test',
+      'If you receive this, the same backend mailer used by OTP is working.'
+    );
 
-    if (result.error) {
-      throw new Error(result.error.message || 'Resend returned an error');
-    }
-
-    console.log('✅ Test email sent successfully! Message ID:', result.data?.id || 'unknown');
+    console.log('Test email sent successfully! Message ID:', result.messageId || 'unknown');
   } catch (err) {
-    console.error('❌ Failed to send test email:', err.message || err);
+    console.error('Failed to send test email:', err.message || err);
+    process.exit(1);
   }
 })();

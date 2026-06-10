@@ -11,6 +11,11 @@ const sendReminderEmail = async (to, subject, text) => {
         return;
     }
 
+    if (!from || /@gmail\.com$/i.test(from)) {
+        console.warn('[CRON] RESEND_FROM must be a Resend verified sender/domain; skipping reminder email.');
+        return;
+    }
+
     const resend = new Resend(apiKey);
     const result = await resend.emails.send({
         from,

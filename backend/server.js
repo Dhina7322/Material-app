@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('./config/env');
 const dns = require('dns');
 dns.setDefaultResultOrder('ipv4first'); // Fix IPv6 issues with Nodemailer
 

@@ -1,0 +1,44 @@
+✅ Cron jobs initialized: Hourly reminders (Mail + App) scheduled.
+🚀 Server started on port 5005
+✅ MongoDB Connected (Local/Cloud)
+[2:41:44 pm] GET /api/status 200 - 138ms
+
+[MAILER] Sending email to: codex.local.test.20260610@gmail.com via Resend
+[2:41:45 pm] POST /api/otp/send-otp 500 - 1287ms
+
+[MAILER] Sending email to: samayanjalimadhuratech@gmail.com via Resend
+[2:43:12 pm] POST /api/otp/send-otp 500 - 733ms
+[WEB LOG]: 🚀 Remote logging initialized - Web logs will now appear in backend terminal
+[WEB LOG]: [App] Initializing AppNavigator...
+[WEB LOG]: 🚀 Remote logging initialized - Web logs will now appear in backend terminal
+[WEB LOG]: [App] Initializing AppNavigator...
+[WEB LOG]: Running application "main" with appParams:
+ {
+  "rootTag": "#root"
+} 
+Development-level warnings: ON.
+Performance optimizations: OFF.
+[WEB LOG]: 🚀 Remote logging initialized - Web logs will now appear in backend terminal
+[WEB LOG]: [App] Initializing AppNavigator...
+[WEB LOG]: Running "main" with {"rootTag":211,"initialProps":{"exp":{"shell":false,"manifestString":"{\"id\":\"cd468d08-fe24-4794-bb21-ae8cd4535d86\",\"createdAt\":\"2026-06-10T09:24:37.083Z\",\"runtimeVersion\":\"exposdk:54.0.0\",\"launchAsset\":{\"key\":\"bundle\",\"contentType\":\"application\\/javascript\",\"url\":\"http:\\/\\/192.168.0.110:8081\\/node_modules\\/expo\\/AppEntry.bundle?platform=android&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.bytecode=1&transform.routerRoot=app&unstable_transformProfile=hermes-stable\"},\"assets\":[],\"metadata\":{},\"extra\":{\"eas\":{\"projectId\":\"65abc780-a5fb-4d2a-9d5d-60b4967ea2ad\"},\"expoClient\":{\"name\":\"MaterialManagingStore\",\"slug\":\"material-managing-store\",\"updates\":{\"enabled\":false,\"checkAutomatically\":\"NEVER\",\"fallbackToCacheTimeout\":0},\"scheme\":\"material-app\",\"version\":\"1.0.0\",\"orientation\":\"portrait\",\"icon\":\".\\/assets\\/icon.png\",\"userInterfaceStyle\":\"light\",\"splash\":{\"image\":\".\\/assets\\/splash.png\",\"resizeMode\":\"contain\",\"backgroundColor\":\"#ffffff\",\"imageUrl\":\"http:\\/\\/192.168.0.110:8081\\/assets\\/.\\/assets\\/splash.png\"},\"assetBundlePatterns\":[\"**\\/*\"],\"ios\":{\"supportsTablet\":true,\"bundleIdentifier\":\"com.arunesharoulor.materialmanagingstore\",\"infoPlist\":{\"ITSAppUsesNonExemptEncryption\":false}},\"android\":{\"package\":\"com.arunesharoulor.materialmanagingstore\",\"softwareKeyboardLayoutMode\":\"resize\",\"adaptiveIcon\":{\"foregroundImage\":\".\\/assets\\/adaptive-icon.png\",\"backgroundColor\":\"#ffffff\",\"foregroundImageUrl\":\"http:\\/\\/192.168.0.110:8081\\/assets\\/.\\/assets\\/adaptive-icon.png\"},\"permissions\":[\"android.permission.RECORD_AUDIO\",\"android.permission.MODIFY_AUDIO_SETTINGS\"]},\"web\":{\"favicon\":\".\\/assets\\/favicon.png\"},\"plugins\":[\"expo-asset\",\"expo-av\",\"expo-font\"],\"extra\":{\"eas\":{\"projectId\":\"65abc780-a5fb-4d2a-9d5d-60b4967ea2ad\"}},\"owner\":\"kalarou\",\"_internal\":{\"isDebug\":false,\"projectRoot\":\"C:\\\\Users\\\\arune\\\\OneDrive\\\\Documents\\\\GitHub\\\\Material-app\\\\frontend\",\"dynamicConfigPath\":{},\"staticConfigPath\":\"C:\\\\Users\\\\arune\\\\OneDrive\\\\Documents\\\\GitHub\\\\Material-app\\\\frontend\\\\app.json\",\"packageJsonPath\":\"C:\\\\Users\\\\arune\\\\OneDrive\\\\Documents\\\\GitHub\\\\Material-app\\\\frontend\\\\package.json\",\"pluginHistory\":{\"expo-asset\":{\"name\":\"expo-asset\",\"version\":\"12.0.13\"},\"expo-av\":{\"name\":\"expo-av\",\"version\":\"16.0.8\"},\"expo-font\":{\"name\":\"expo-font\",\"version\":\"14.0.12\"}}},\"sdkVersion\":\"54.0.0\",\"platforms\":[\"ios\",\"android\",\"web\"],\"iconUrl\":\"http:\\/\\/192.168.0.110:8081\\/assets\\/.\\/assets\\/icon.png\",\"hostUri\":\"192.168.0.110:8081\"},\"expoGo\":{\"debuggerHost\":\"192.168.0.110:8081\",\"developer\":{\"tool\":\"expo-cli\",\"projectRoot\":\"C:\\\\Users\\\\arune\\\\OneDrive\\\\Documents\\\\GitHub\\\\Material-app\\\\frontend\"},\"packagerOpts\":{\"dev\":true},\"mainModuleName\":\"node_modules\\/expo\\/AppEntry\"},\"scopeKey\":\"@kalarou\\/material-managing-store\"},\"isVerified\":true}"}},"fabric":true}
+[WEB LOG]: [App] Initializing AppNavigator...
+[WEB LOG]: Running "main" with {"rootTag":231,"initialProps":{"exp":{"shell":false,"manifestString":"{\"id\":\"d45944d4-2c01-473a-a3fe-b15881cdb66d\",\"createdAt\":\"2026-06-10T09:26:28.681Z\",\"runtimeVersion\":\"exposdk:54.0.0\",\"launchAsset\":{\"key\":\"bundle\",\"contentType\":\"application\\/javascript\",\"url\":\"http:\\/\\/192.168.0.110:8081\\/node_modules\\/expo\\/AppEntry.bundle?platform=android&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.bytecode=1&transform.routerRoot=app&unstable_transformProfile=hermes-stable\"},\"assets\":[],\"metadata\":{},\"extra\":{\"eas\":{\"projectId\":\"65abc780-a5fb-4d2a-9d5d-60b4967ea2ad\"},\"expoClient\":{\"name\":\"MaterialManagingStore\",\"slug\":\"material-managing-store\",\"updates\":{\"enabled\":false,\"checkAutomatically\":\"NEVER\",\"fallbackToCacheTimeout\":0},\"scheme\":\"material-app\",\"version\":\"1.0.0\",\"orientation\":\"portrait\",\"icon\":\".\\/assets\\/icon.png\",\"userInterfaceStyle\":\"light\",\"splash\":{\"image\":\".\\/assets\\/splash.png\",\"resizeMode\":\"contain\",\"backgroundColor\":\"#ffffff\",\"imageUrl\":\"http:\\/\\/192.168.0.110:8081\\/assets\\/.\\/assets\\/splash.png\"},\"assetBundlePatterns\":[\"**\\/*\"],\"ios\":{\"supportsTablet\":true,\"bundleIdentifier\":\"com.arunesharoulor.materialmanagingstore\",\"infoPlist\":{\"ITSAppUsesNonExemptEncryption\":false}},\"android\":{\"package\":\"com.arunesharoulor.materialmanagingstore\",\"softwareKeyboardLayoutMode\":\"resize\",\"adaptiveIcon\":{\"foregroundImage\":\".\\/assets\\/adaptive-icon.png\",\"backgroundColor\":\"#ffffff\",\"foregroundImageUrl\":\"http:\\/\\/192.168.0.110:8081\\/assets\\/.\\/assets\\/adaptive-icon.png\"},\"permissions\":[\"android.permission.RECORD_AUDIO\",\"android.permission.MODIFY_AUDIO_SETTINGS\"]},\"web\":{\"favicon\":\".\\/assets\\/favicon.png\"},\"plugins\":[\"expo-asset\",\"expo-av\",\"expo-font\"],\"extra\":{\"eas\":{\"projectId\":\"65abc780-a5fb-4d2a-9d5d-60b4967ea2ad\"}},\"owner\":\"kalarou\",\"_internal\":{\"isDebug\":false,\"projectRoot\":\"C:\\\\Users\\\\arune\\\\OneDrive\\\\Documents\\\\GitHub\\\\Material-app\\\\frontend\",\"dynamicConfigPath\":{},\"staticConfigPath\":\"C:\\\\Users\\\\arune\\\\OneDrive\\\\Documents\\\\GitHub\\\\Material-app\\\\frontend\\\\app.json\",\"packageJsonPath\":\"C:\\\\Users\\\\arune\\\\OneDrive\\\\Documents\\\\GitHub\\\\Material-app\\\\frontend\\\\package.json\",\"pluginHistory\":{\"expo-asset\":{\"name\":\"expo-asset\",\"version\":\"12.0.13\"},\"expo-av\":{\"name\":\"expo-av\",\"version\":\"16.0.8\"},\"expo-font\":{\"name\":\"expo-font\",\"version\":\"14.0.12\"}}},\"sdkVersion\":\"54.0.0\",\"platforms\":[\"ios\",\"android\",\"web\"],\"iconUrl\":\"http:\\/\\/192.168.0.110:8081\\/assets\\/.\\/assets\\/icon.png\",\"hostUri\":\"192.168.0.110:8081\"},\"expoGo\":{\"debuggerHost\":\"192.168.0.110:8081\",\"developer\":{\"tool\":\"expo-cli\",\"projectRoot\":\"C:\\\\Users\\\\arune\\\\OneDrive\\\\Documents\\\\GitHub\\\\Material-app\\\\frontend\"},\"packagerOpts\":{\"dev\":true},\"mainModuleName\":\"node_modules\\/expo\\/AppEntry\"},\"scopeKey\":\"@kalarou\\/material-managing-store\"},\"isVerified\":true}"}},"fabric":true}
+[WEB LOG]: 🚀 Remote logging initialized - Web logs will now appear in backend terminal
+
+[MAILER] Sending email to: arounesharoulor@gmail.com via Resend
+[2:56:54 pm] POST /api/otp/send-otp 500 - 1553ms
+[WEB LOG]: 🚀 Remote logging initialized - Web logs will now appear in backend terminal
+[WEB LOG]: [App] Initializing AppNavigator...
+[WEB LOG]: Running application "main" with appParams:
+ {
+  "rootTag": "#root"
+} 
+Development-level warnings: ON.
+Performance optimizations: OFF.
+
+[MAILER] Sending email to: arounesh004@gmail.com via Resend
+[2:59:06 pm] POST /api/otp/send-otp 500 - 1076ms
+[404-UNMATCHED] GET /api/otp/send-otp
+[2:59:28 pm] GET /api/otp/send-otp 404 - 82ms
+[2:59:28 pm] GET /favicon.ico 404 - 81ms
+[CRON] Hourly reminder started at 3:00:00 pm

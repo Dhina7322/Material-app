@@ -73,6 +73,16 @@ const RegisterScreen = ({ navigation }) => {
         email: email.trim(),
         employeeId: trimmedId
       });
+      if (response.data?.emailDelivered === false) {
+        throw {
+          response: {
+            data: {
+              msg: response.data?.msg || 'OTP email was not delivered. Please check backend email configuration.',
+              debug: response.data?.debug,
+            },
+          },
+        };
+      }
       const debugDurationMs = response.data?.debugDurationMs;
 
       // Navigate to OTP screen only after the email request succeeds.
@@ -90,9 +100,8 @@ const RegisterScreen = ({ navigation }) => {
       if (!err.response) {
         setErrors({ auth: `Connection Error: Backend server is unreachable at ${api.defaults.baseURL || 'unknown'}. Check your IP/Network.` });
       } else {
-        const debugMsg = err.response.data?.debug;
         const msg = err.response.data?.msg || 'Could not send verification code. Please try again.';
-        setErrors({ auth: debugMsg ? `${msg}\n(Debug: ${debugMsg})` : msg });
+        setErrors({ auth: msg });
       }
     } finally {
       setLoading(false);
